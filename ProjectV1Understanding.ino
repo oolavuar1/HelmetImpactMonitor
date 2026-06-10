@@ -43,11 +43,19 @@ void loop() {
   float y = (rawY / 16384.0) * 9.8;
   float z = (rawZ / 16384.0) * 9.8;
 
+  float totalAccel = sqrt((x * x) + (y * y) + (z * z));
+
+  float impactAccel = totalAccel - 9.8;
+
+  if (impactAccel < 0) impactAccel = 0;
+
   Serial.print("X: "); Serial.print(x);
   Serial.print(" | Y: "); Serial.print(y);
-  Serial.print(" | Z: "); Serial.println(z);
+  Serial.print(" | Z: "); Serial.print(z);
+  Serial.print(" | Total: "); Serial.println(impactAccel);
 
-  if (abs(x) > ACCEL_THRESHOLD || abs(y) > ACCEL_THRESHOLD || abs(z) > ACCEL_THRESHOLD) {
+
+  if (impactAccel > ACCEL_THRESHOLD) {
     Serial.println("=========================================");
     Serial.println("Direct Mode: THRESHOLD EXCEEDED!");
     Serial.println("=========================================");
