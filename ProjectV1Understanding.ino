@@ -1,10 +1,14 @@
 #include <Wire.h>
 
+const int LED_PIN = 21;
+
 const int MPU_ADDR = 0x68; 
 
 const float ACCEL_THRESHOLD = 15.0; 
 
 void setup() {
+  pinMode(LED_PIN, OUTPUT);
+
   Serial.begin(115200);
   while (!Serial) delay(10);
 
@@ -22,11 +26,14 @@ void setup() {
 
   if (error == 0) {
     Serial.println("SUCCESS: Direct connection established with MPU6050!");
-  } else {
+  } 
+  else {
     Serial.print("FAILED: Direct connection error code: ");
     Serial.println(error);
     while (1) delay(10);
   }
+
+  digitalWrite(LED_PIN, LOW);
 }
 
 void loop() {
@@ -59,7 +66,9 @@ void loop() {
     Serial.println("=========================================");
     Serial.println("Direct Mode: THRESHOLD EXCEEDED!");
     Serial.println("=========================================");
-    delay(500);
+    digitalWrite(LED_PIN, HIGH);
+    delay(2000);
+    digitalWrite(LED_PIN, LOW);
   }
 
   delay(100);
