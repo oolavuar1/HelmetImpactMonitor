@@ -7,14 +7,19 @@ const int MPU_ADDR = 0x68;
 const float ACCEL_THRESHOLD = 15.0; 
 
 const String RESTART_PHRASE = "clear";
-
 const String START_PHRASE = "start";
-
 const String STOP_PHRASE = "stop";
 
 bool systemRunning = false;
-
 bool thresholdActive = true;
+
+float PeakX = 0.0;
+float PeakY = 0.0;
+float PeakZ = 0.0;
+float PeakSum = 0.0;
+
+unsigned long lastWindowResetTime = 0;
+const unsigned long WINDOW_DURATION_MS = 50;
 
 void setup() {
   pinMode(LED_PIN, OUTPUT);
@@ -43,6 +48,11 @@ void setup() {
     while (1) delay(10);
   }
 
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x1A);
+  Wire.write(3);
+  Wire.endTransmission();
+
   digitalWrite(LED_PIN, LOW);
 }
 
@@ -57,6 +67,8 @@ void loop() {
     if(inputString == START_PHRASE) {
       systemRunning = true;
       thresholdActive = true;
+      PeakX = PeakY = PeakZ = PeakSum = 0.0;
+      lastWindowResetTime = millis();
       Serial.println("System is powered on.");
       digitalWrite(LED_PIN, LOW);
     }
@@ -69,6 +81,8 @@ void loop() {
     else if (inputString == RESTART_PHRASE) {
       if (!thresholdActive) {
       thresholdActive = true;
+      PeakX = PeakY = PeakZ = PeakSum = 0.0;
+      lastWindowResetTime = millis();
       Serial.println("Beginning monitoring again.");
       digitalWrite(LED_PIN, LOW);
       delay(500);
@@ -82,41 +96,51 @@ void loop() {
   }
 
   if (thresholdActive && systemRunning) {
-  Wire.beginTransmission(MPU_ADDR);
-  Wire.write(0x3B); 
-  Wire.endTransmission(false);
-  Wire.requestFrom(MPU_ADDR, 6, true);
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(0x3B); 
+    Wire.endTransmission(false);
+    Wire.requestFrom(MPU_ADDR, 6, true);
 
-  int16_t rawX = (Wire.read() << 8) | Wire.read();
-  int16_t rawY = (Wire.read() << 8) | Wire.read();
-  int16_t rawZ = (Wire.read() << 8) | Wire.read();
+    int16_t rawX = (Wire.read() << 8) | Wire.read();
+    int16_t rawY = (Wire.read() << 8) | Wire.read();
+    int16_t rawZ = (Wire.read() << 8) | Wire.read();
 
-  float x = (rawX / 16384.0) * 9.8;
-  float y = (rawY / 16384.0) * 9.8;
-  float z = (rawZ / 16384.0) * 9.8;
+    float x = (rawX / 16384.0) * 9.8;
+    float y = (rawY / 16384.0) * 9.8;
+    float z = (rawZ / 16384.0) * 9.8;
 
-  float totalAccel = sqrt((x * x) + (y * y) + (z * z));
+    float totalAccel = sqrt((x * x) + (y * y) + (z * z));
+    float impactAccel = totalAccel - 9.8;
+    if (impactAccel < 0) impactAccel = 0;
 
-  float impactAccel = totalAccel - 9.8;
+    float gravityScale = (totalAccel > 0) ? (impactAccel/totalAccel) : 0;
 
-  if (impactAccel < 0) impactAccel = 0;
+    if (impactAccel > PeakSum) {
+      PeakSum = impactAccel;
+      PeakX = x * gravityScale;
+      PeakY = y * gravityScale;
+      PeakZ = z * gravityScale;
+    }
 
-  Serial.print("X: "); Serial.print(x);
-  Serial.print(" | Y: "); Serial.print(y);
-  Serial.print(" | Z: "); Serial.print(z);
-  Serial.print(" | Total: "); Serial.println(impactAccel);
+    if (millis() - lastWindowResetTime >= WINDOW_DURATION_MS) {
+      Serial.print("X: "); Serial.print(PeakX);
+      Serial.print(" | Y: "); Serial.print(PeakY);
+      Serial.print(" | Z: "); Serial.print(PeakZ);
+      Serial.print(" | Sum: "); Serial.println(PeakSum);
+  
+      if (PeakSum > ACCEL_THRESHOLD) {
+        thresholdActive = false;
 
+        Serial.println("=========================================");
+        Serial.print(PeakSum);
+        Serial.println(" m/s^2 --> THRESHOLD EXCEEDED!");
+        Serial.println("=========================================");
 
-  if (impactAccel > ACCEL_THRESHOLD) {
-    thresholdActive = false;
+        digitalWrite(LED_PIN, HIGH);
+      }
 
-    Serial.println("=========================================");
-    Serial.println("Direct Mode: THRESHOLD EXCEEDED!");
-    Serial.println("=========================================");
-
-    digitalWrite(LED_PIN, HIGH);
-  }
-
-  delay(100);
+      PeakX = PeakY = PeakZ = PeakSum = 0.0;
+      lastWindowResetTime = millis();
+    }
   }
 }
