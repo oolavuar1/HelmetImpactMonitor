@@ -6,6 +6,10 @@ const int MPU_ADDR = 0x68;
 
 const float ACCEL_THRESHOLD = 15.0; 
 
+const String RESTART_PHRASE = "clear";
+
+bool thresholdActive = true;
+
 void setup() {
   pinMode(LED_PIN, OUTPUT);
 
@@ -37,6 +41,24 @@ void setup() {
 }
 
 void loop() {
+  if (Serial.available() > 0) {
+    String inputString = Serial.readStringUntil('\n');
+
+    inputString.trim();
+
+    if (!thresholdActive && inputString.equalsIgnoreCase(RESTART_PHRASE)) {
+      thresholdActive = true;
+      Serial.println("Beginning monitoring again.");
+      digitalWrite(LED_PIN, LOW);
+      delay(500);
+    }
+    else if (!thresholdActive) {
+      Serial.print("Type '");
+      Serial.print(RESTART_PHRASE);
+      Serial.println("' to reset.");
+    }
+  }
+  if (thresholdActive) {
   Wire.beginTransmission(MPU_ADDR);
   Wire.write(0x3B); 
   Wire.endTransmission(false);
@@ -67,9 +89,10 @@ void loop() {
     Serial.println("Direct Mode: THRESHOLD EXCEEDED!");
     Serial.println("=========================================");
     digitalWrite(LED_PIN, HIGH);
-    delay(2000);
-    digitalWrite(LED_PIN, LOW);
+    
+    thresholdActive = false;
   }
 
   delay(100);
+  }
 }
