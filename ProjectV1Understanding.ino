@@ -8,6 +8,12 @@ const float ACCEL_THRESHOLD = 15.0;
 
 const String RESTART_PHRASE = "clear";
 
+const String START_PHRASE = "start";
+
+const String STOP_PHRASE = "stop";
+
+bool systemRunning = false;
+
 bool thresholdActive = true;
 
 void setup() {
@@ -45,20 +51,37 @@ void loop() {
     String inputString = Serial.readStringUntil('\n');
 
     inputString.trim();
+    inputString.toLowerCase();
+    inputString.replace(" ", "");
 
-    if (!thresholdActive && inputString.equalsIgnoreCase(RESTART_PHRASE)) {
+    if(inputString == START_PHRASE) {
+      systemRunning = true;
+      thresholdActive = true;
+      Serial.println("System is powered on.");
+      digitalWrite(LED_PIN, LOW);
+    }
+    else if (inputString == STOP_PHRASE) {
+      systemRunning = false;
+      thresholdActive = false;
+      Serial.println("System is turned off.");
+      digitalWrite(LED_PIN, LOW);
+    }
+    else if (inputString == RESTART_PHRASE) {
+      if (!thresholdActive) {
       thresholdActive = true;
       Serial.println("Beginning monitoring again.");
       digitalWrite(LED_PIN, LOW);
       delay(500);
+      }
     }
-    else if (!thresholdActive) {
-      Serial.print("Type '");
-      Serial.print(RESTART_PHRASE);
-      Serial.println("' to reset.");
+    else {
+      Serial.print("Unknown command: '");
+      Serial.print(inputString);
+      Serial.println("'. Please use 'start', 'stop', or 'clear'.");
     }
   }
-  if (thresholdActive) {
+
+  if (thresholdActive && systemRunning) {
   Wire.beginTransmission(MPU_ADDR);
   Wire.write(0x3B); 
   Wire.endTransmission(false);
@@ -85,12 +108,13 @@ void loop() {
 
 
   if (impactAccel > ACCEL_THRESHOLD) {
+    thresholdActive = false;
+
     Serial.println("=========================================");
     Serial.println("Direct Mode: THRESHOLD EXCEEDED!");
     Serial.println("=========================================");
+
     digitalWrite(LED_PIN, HIGH);
-    
-    thresholdActive = false;
   }
 
   delay(100);
