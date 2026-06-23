@@ -16,15 +16,18 @@ bool thresholdActive = false;      //true = actively monitoring for impacts
 
 //peak tracking (stores the highest impact reading within the current 50ms window)
 float PeakX = 0.0, PeakY = 0.0, PeakZ = 0.0, PeakSum = 0.0; //accel peaks
-float PeakGX = 0.0, PeakGY = 0.0, PeakGX = 0.0, PeakGyro = 0.0; //gyro peaks
+float PeakGX = 0.0, PeakGY = 0.0, PeakGZ = 0.0, PeakGyro = 0.0; //gyro peaks
 
 //window timing
 unsigned long lastWindowResetTime = 0;          
 const unsigned long WINDOW_DURATION_MS = 50;   //report peaks every 50ms
 
 //rolling gravity baseline (tracks the gravity vector so it can be subtracted from live readings)
-float baselineX = 0, baselineY = 0, baselineZ = 9.8;
+float baselineX = 0, baselineY = 0, baselineZ = 0;
 const float ALPHA = 0.02; //how fast the baseline adapts (2% per reading (1000 readings per second))
+
+//gyro drift offsets (calculated at startup, subtracted every loop)
+float gyroOffsetX = 0, gyroOffsetY = 0, gyroOffsetZ = 0;
 
 //resets all peak values to zero
 void resetPeaks() {
@@ -43,7 +46,7 @@ void triggerAlert(String reason, float value, String unit) {
   Serial.print(unit);
   Serial.print(" --> ");
   Serial.print(reason);
-  Serial.println("THRESHOLD EXCEEDED!");
+  Serial.println(" THRESHOLD EXCEEDED!");
   Serial.println("=========================================");
 }
 
@@ -150,6 +153,54 @@ void setup() {
   Wire.write(0x18);
   Wire.endTransmission();
 
+  //calibration: sample both sensors for 2 seconds at rest to zero out offsets
+  //keep the sensor completely still during this window
+  Serial.println("Calibrating... keep sensor still.");
+  long calGX = 0, calGY = 0, calGZ = 0;
+  long calX = 0, calY = 0, calZ = 0;
+  int samples = 0;
+  unsigned long calStart = millis();
+
+  while (millis() - calStart < 2000) {
+    //read accel
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(0x3B);
+    Wire.endTransmission(false);
+    Wire.requestFrom(MPU_ADDR, 6, true);
+    if (Wire.available() >= 6) {
+      calX += (int16_t)((Wire.read() << 8) | Wire.read());
+      calY += (int16_t)((Wire.read() << 8) | Wire.read());
+      calZ += (int16_t)((Wire.read() << 8) | Wire.read());
+    }
+
+    //read gyro
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(0x43);
+    Wire.endTransmission(false);
+    Wire.requestFrom(MPU_ADDR, 6, true);
+    if (Wire.available() >= 6) {
+      calGX += (int16_t)((Wire.read() << 8) | Wire.read());
+      calGY += (int16_t)((Wire.read() << 8) | Wire.read());
+      calGZ += (int16_t)((Wire.read() << 8) | Wire.read());
+    }
+
+    samples++;
+    delay(2);
+  }
+
+  //seed the accel baseline directly from calibration averages
+  //replaces a guess of (0, 0, 9.8) with actual resting values
+  baselineX = ((float)calX / samples / 2048.0) * 9.8;
+  baselineY = ((float)calY / samples / 2048.0) * 9.8;
+  baselineZ = ((float)calZ / samples / 2048.0) * 9.8;
+
+  //store gyro averages as offsets to subtract every loop
+  gyroOffsetX = (float)calGX / samples / 16.4;
+  gyroOffsetY = (float)calGY / samples / 16.4;
+  gyroOffsetZ = (float)calGZ / samples / 16.4;
+
+  Serial.println("Calibration done. Type 'start' to begin.");
+
   digitalWrite(LED_PIN, LOW);
 }
 
@@ -194,10 +245,10 @@ void loop() {
   int16_t rawGY = (Wire.read() << 8) | Wire.read();
   int16_t rawGZ = (Wire.read() << 8) | Wire.read();
 
-  //convert to dps: divide by scale factor (16.4 at +-2000 dps)
-  float gx = rawGX / 16.4;
-  float gy = rawGY / 16.4;
-  float gz = rawGZ / 16.4;
+  //convert to dps: divide by scale factor (16.4 at +-2000 dps) and subtract calibration offsets to remove drift
+  float gx = (rawGX / 16.4) - gyroOffsetX;
+  float gy = (rawGY / 16.4) - gyroOffsetY;
+  float gz = (rawGZ / 16.4) - gyroOffsetZ;
 
   //compute magnitude of the current gravity baseline vector
   float baselineMagnitude = sqrt(baselineX*baselineX + baselineY*baselineY + baselineZ*baselineZ);
