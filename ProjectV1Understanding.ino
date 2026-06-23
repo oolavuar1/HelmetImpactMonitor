@@ -4,6 +4,7 @@
 const int LED_PIN = 21;                 //GPIO pin connected to the LED
 const int MPU_ADDR = 0x68;              //default I2C address of the MPU6050
 const float ACCEL_THRESHOLD = 15.0;     //impact threshold in m/s^2
+const float GYRO_THRESHOLD = 1500;      //rotational threshold in dps
 
 const String RESTART_PHRASE = "clear";  //resumes monitoring after an alert
 const String START_PHRASE = "start";    //turns the system on
@@ -14,7 +15,8 @@ bool systemRunning = false;       //true = device is on
 bool thresholdActive = false;      //true = actively monitoring for impacts
 
 //peak tracking (stores the highest impact reading within the current 50ms window)
-float PeakX = 0.0, PeakY = 0.0, PeakZ = 0.0, PeakSum = 0.0;
+float PeakX = 0.0, PeakY = 0.0, PeakZ = 0.0, PeakSum = 0.0; //accel peaks
+float PeakGX = 0.0, PeakGY = 0.0, PeakGX = 0.0, PeakGyro = 0.0; //gyro peaks
 
 //window timing
 unsigned long lastWindowResetTime = 0;          
@@ -27,6 +29,22 @@ const float ALPHA = 0.02; //how fast the baseline adapts (2% per reading (1000 r
 //resets all peak values to zero
 void resetPeaks() {
   PeakX = PeakY = PeakZ = PeakSum = 0;
+  PeakGX = PeakGY = PeakGZ = PeakGyro = 0;
+}
+
+//triggers an alert, pauses monitoring, and lights the LED
+//takes a message string so accel and gyro can report differently
+void triggerAlert(String reason, float value, String unit) {
+  thresholdActive = false;
+  digitalWrite(LED_PIN, HIGH);
+  Serial.println("=========================================");
+  Serial.print(value);
+  Serial.print(" ");
+  Serial.print(unit);
+  Serial.print(" --> ");
+  Serial.print(reason);
+  Serial.println("THRESHOLD EXCEEDED!");
+  Serial.println("=========================================");
 }
 
 //executes serial commands from the user
@@ -125,6 +143,13 @@ void setup() {
   Wire.write(0x18);
   Wire.endTransmission();
 
+  //set gyro range to +-2000 dps (register 0x1B, value 0x18)
+  //scale factor set to 16.4 LSP/(dps)
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x1B);
+  Wire.write(0x18);
+  Wire.endTransmission();
+
   digitalWrite(LED_PIN, LOW);
 }
 
@@ -138,28 +163,44 @@ void loop() {
   //skip IMU reading if system is off or paused after alert
   if (!systemRunning || !thresholdActive) return;
 
-  //request 6 bytes of accelerometer data starting at register 0x3B
-  //false = keep I2C bus active between write and read
+  //read accelerometer data starting at register 0x3B
   Wire.beginTransmission(MPU_ADDR);
   Wire.write(0x3B); 
   Wire.endTransmission(false);
   Wire.requestFrom(MPU_ADDR, 6, true);
 
-  //guard: skip this cycle if I2C glitched and returned fewer than 6 bytes
+  //guard
   if (Wire.available() < 6) return;
 
-  //each axis is two bytes (high byte + low byte); shift and OR to assemble
   int16_t rawX = (Wire.read() << 8) | Wire.read();
   int16_t rawY = (Wire.read() << 8) | Wire.read();
   int16_t rawZ = (Wire.read() << 8) | Wire.read();
 
-  //convert raw integers to m/s^2: divide by scale factor (2048 at +-16g), multiply by 9.8
+  //convert to m/s^2: divide by scale factor (2048 at +-16g), multiply by 9.8
   float x = (rawX / 2048.0) * 9.8;
   float y = (rawY / 2048.0) * 9.8;
   float z = (rawZ / 2048.0) * 9.8;
 
+  //read gyroscope data starting at register 0x43
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x43);
+  Wire.endTransmission(false);
+  Wire.requestFrom(MPU_ADDR, 6, true);
+
+  //guard
+  if (Wire.available() < 6) return;
+
+  int16_t rawGX = (Wire.read() << 8) | Wire.read();
+  int16_t rawGY = (Wire.read() << 8) | Wire.read();
+  int16_t rawGZ = (Wire.read() << 8) | Wire.read();
+
+  //convert to dps: divide by scale factor (16.4 at +-2000 dps)
+  float gx = rawGX / 16.4;
+  float gy = rawGY / 16.4;
+  float gz = rawGZ / 16.4;
+
   //compute magnitude of the current gravity baseline vector
-  float baselineMagnitude = sqrt(baselineX * baselineX + baselineY * baselineY + baselineZ * baselineZ);
+  float baselineMagnitude = sqrt(baselineX*baselineX + baselineY*baselineY + baselineZ*baselineZ);
   
   //compute total acceleration magnitude of live reading
   float totalAccel = sqrt(x*x + y*y + z*z);
@@ -176,9 +217,12 @@ void loop() {
   float impactX = x - baselineX;
   float impactY = y - baselineY;
   float impactZ = z - baselineZ;
-  float impactAccel = sqrt(impactX * impactX + impactY * impactY + impactZ * impactZ);
+  float impactAccel = sqrt(impactX*impactX + impactY*impactY + impactZ*impactZ);
 
-  //update peaks if this reading is the strongest so far in this window
+  //compute gyro magnitude (total rotational velocity across all axes)
+  float gyroMag = sqrt(gx*gx + gy*gy + gz*gz);
+
+  //update peaks if this reading is the strongest so far in the window
   if (impactAccel > PeakSum) {
     PeakSum = impactAccel;
     PeakX = impactX;
@@ -186,21 +230,36 @@ void loop() {
     PeakZ = impactZ;
   }
 
+  if (gyroMag > PeakGyro) {
+    PeakGyro = gyroMag;
+    PeakGX = gx;
+    PeakGY = gy;
+    PeakGZ = gz;
+  }
+
   //at the end of each 50ms window, report and check threshold
   if (millis() - lastWindowResetTime >= WINDOW_DURATION_MS) {
-    Serial.print("X: "); Serial.print(PeakX);
+    
+    //accel report
+    Serial.print(" ACCEL | X: "); Serial.print(PeakX);
     Serial.print(" | Y: "); Serial.print(PeakY);
     Serial.print(" | Z: "); Serial.print(PeakZ);
-    Serial.print(" | Sum: "); Serial.println(PeakSum);
-  
+    Serial.print(" | Sum: "); Serial.print(PeakSum);
+    Serial.println(" m/s^2");
+
+    //gyro report
+    Serial.print("GYRO  | X: "); Serial.print(PeakGX);
+    Serial.print(" | Y: "); Serial.print(PeakGY);
+    Serial.print(" | Z: "); Serial.print(PeakGZ);
+    Serial.print(" | Sum: "); Serial.print(PeakGyro);
+    Serial.println(" deg/s");
+
+    //threshold checks
     if (PeakSum > ACCEL_THRESHOLD) {
-      //pause monitoring and trigger alert; system stays on for BLE later
-      thresholdActive = false;
-      digitalWrite(LED_PIN, HIGH);
-      Serial.println("=========================================");
-      Serial.print(PeakSum);
-      Serial.println(" m/s^2 --> THRESHOLD EXCEEDED!");
-      Serial.println("=========================================");
+      triggerAlert("LINEAR", PeakSum, "m/s^2");
+    }
+    if (PeakGyro > GYRO_THRESHOLD) {
+      triggerAlert("ROTATIONAL", PeakGyro, "deg/s");
     }
 
     //reset peaks and restart the window timer
