@@ -9,6 +9,7 @@ const float GYRO_THRESHOLD = 1500;      //rotational threshold in dps
 const String RESTART_PHRASE = "clear";  //resumes monitoring after an alert
 const String START_PHRASE = "start";    //turns the system on
 const String STOP_PHRASE = "stop";      //turns the system off
+const String CAL_PHRASE = "calibrate";  //triggers an imu calibration
 
 //state
 bool systemRunning = false;       //true = device is on
@@ -48,6 +49,61 @@ void triggerAlert(String reason, float value, String unit) {
   Serial.print(reason);
   Serial.println(" THRESHOLD EXCEEDED!");
   Serial.println("=========================================");
+}
+
+//samples both sensors for 2 seconds at rest to zero out offsets
+//sets the gravity baseline and stores gyro drift offsets
+//hold the device completely still during this window
+void calibrateIMU() {
+  Serial.println("Calibrating... keep sensor still.");
+
+  long calGX = 0, calGY = 0, calGZ = 0;
+  long calX = 0, calY = 0, calZ = 0;
+  int samples = 0;
+  unsigned long calStart = millis();
+
+  while (millis() - calStart < 2000) {
+    //read accel
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(0x3B);
+    Wire.endTransmission(false);
+    Wire.requestFrom(MPU_ADDR, 6, true);
+    if (Wire.available() >= 6) {
+      calX += (int16_t)((Wire.read() << 8) | Wire.read());
+      calY += (int16_t)((Wire.read() << 8) | Wire.read());
+      calZ += (int16_t)((Wire.read() << 8) | Wire.read());
+    }
+
+    //read gyro
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(0x43);
+    Wire.endTransmission(false);
+    Wire.requestFrom(MPU_ADDR, 6, true);
+    if (Wire.available() >= 6) {
+      calGX += (int16_t)((Wire.read() << 8) | Wire.read());
+      calGY += (int16_t)((Wire.read() << 8) | Wire.read());
+      calGZ += (int16_t)((Wire.read() << 8) | Wire.read());
+    }
+
+    samples++;
+    delay(2);
+  }
+
+  //seed the accel baseline directly from calibration averages
+  //replaces a guess of (0, 0, 9.8) with actual resting values
+  baselineX = ((float)calX / samples / 2048.0) * 9.8;
+  baselineY = ((float)calY / samples / 2048.0) * 9.8;
+  baselineZ = ((float)calZ / samples / 2048.0) * 9.8;
+
+  //store gyro averages as offsets to subtract every loop
+  gyroOffsetX = (float)calGX / samples / 16.4;
+  gyroOffsetY = (float)calGY / samples / 16.4;
+  gyroOffsetZ = (float)calGZ / samples / 16.4;
+
+  resetPeaks();
+  lastWindowResetTime = millis();
+
+  Serial.println("Calibration completed. Type 'start' to begin, or recalibrate using 'calibrate'.");
 }
 
 //executes serial commands from the user
@@ -99,11 +155,19 @@ void handleCommand(String input) {
     digitalWrite(LED_PIN, LOW);
     Serial.println("Monitoring resumed.");
   }
+  else if (input == CAL_PHRASE) {
+    if (systemRunning) {
+      //system must be off to calibrate, otherwise IMU will continue to send readings
+      Serial.println("Stop the system before calibrating. Use 'stop' first.");
+      return;
+    }
+    calibrateIMU();
+  }
   else {
     //unknown commands
     Serial.print("Unknown command: '");
     Serial.print(input);
-    Serial.println("'. Use start, stop, or clear.");
+    Serial.println("'. Use start, stop, clear, or calibrate");
   }
 }
 
@@ -111,6 +175,7 @@ void handleCommand(String input) {
 void setup() {
   pinMode(LED_PIN, OUTPUT);
   Serial.begin(115200);
+  delay(2000);
   while (!Serial) delay(10); //wait for serial monitor to open
 
   Serial.println("Initializing MPU6050...");
@@ -124,82 +189,36 @@ void setup() {
   byte error = Wire.endTransmission();
 
   if (error == 0) {
-    Serial.println("MPU6050 connected. Type 'start' to begin.");
+    Serial.println("MPU6050 connected. Please wait for two seconds while it calibrates...");
+
+    //configure DLPF (Digital Low-Pass Filter) (register 0x1A, value 3 = ~44Hz bandwidth)
+    //smooths out high frequency noise before data reaches the code  
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(0x1A);
+    Wire.write(3);
+    Wire.endTransmission();
+
+    //set accelerometer range to +-16g (register 0x1c, value 0x18)
+    //scale factor becomes 2048 LSB/g instead of the default 16384 at +-2g
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(0x1C);
+    Wire.write(0x18);
+    Wire.endTransmission();
+
+    //set gyro range to +-2000 dps (register 0x1B, value 0x18)
+    //scale factor set to 16.4 LSP/(dps)
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(0x1B);
+    Wire.write(0x18);
+    Wire.endTransmission();
+
+    calibrateIMU();
   } 
   else {
     Serial.print("Connection failed, error code: ");
     Serial.println(error);
     while (1) delay(10); //halt if sensor not found
   }
-
-  //configure DLPF (Digital Low-Pass Filter) (register 0x1A, value 3 = ~44Hz bandwidth)
-  //smooths out high frequency electrical noise before data reaches the code  
-  Wire.beginTransmission(MPU_ADDR);
-  Wire.write(0x1A);
-  Wire.write(3);
-  Wire.endTransmission();
-
-  //set accelerometer range to +-16g (register 0x1c, value 0x18)
-  //scale factor becomes 2048 LSB/g instead of the default 16384 at +-2g
-  Wire.beginTransmission(MPU_ADDR);
-  Wire.write(0x1C);
-  Wire.write(0x18);
-  Wire.endTransmission();
-
-  //set gyro range to +-2000 dps (register 0x1B, value 0x18)
-  //scale factor set to 16.4 LSP/(dps)
-  Wire.beginTransmission(MPU_ADDR);
-  Wire.write(0x1B);
-  Wire.write(0x18);
-  Wire.endTransmission();
-
-  //calibration: sample both sensors for 2 seconds at rest to zero out offsets
-  //keep the sensor completely still during this window
-  Serial.println("Calibrating... keep sensor still.");
-  long calGX = 0, calGY = 0, calGZ = 0;
-  long calX = 0, calY = 0, calZ = 0;
-  int samples = 0;
-  unsigned long calStart = millis();
-
-  while (millis() - calStart < 2000) {
-    //read accel
-    Wire.beginTransmission(MPU_ADDR);
-    Wire.write(0x3B);
-    Wire.endTransmission(false);
-    Wire.requestFrom(MPU_ADDR, 6, true);
-    if (Wire.available() >= 6) {
-      calX += (int16_t)((Wire.read() << 8) | Wire.read());
-      calY += (int16_t)((Wire.read() << 8) | Wire.read());
-      calZ += (int16_t)((Wire.read() << 8) | Wire.read());
-    }
-
-    //read gyro
-    Wire.beginTransmission(MPU_ADDR);
-    Wire.write(0x43);
-    Wire.endTransmission(false);
-    Wire.requestFrom(MPU_ADDR, 6, true);
-    if (Wire.available() >= 6) {
-      calGX += (int16_t)((Wire.read() << 8) | Wire.read());
-      calGY += (int16_t)((Wire.read() << 8) | Wire.read());
-      calGZ += (int16_t)((Wire.read() << 8) | Wire.read());
-    }
-
-    samples++;
-    delay(2);
-  }
-
-  //seed the accel baseline directly from calibration averages
-  //replaces a guess of (0, 0, 9.8) with actual resting values
-  baselineX = ((float)calX / samples / 2048.0) * 9.8;
-  baselineY = ((float)calY / samples / 2048.0) * 9.8;
-  baselineZ = ((float)calZ / samples / 2048.0) * 9.8;
-
-  //store gyro averages as offsets to subtract every loop
-  gyroOffsetX = (float)calGX / samples / 16.4;
-  gyroOffsetY = (float)calGY / samples / 16.4;
-  gyroOffsetZ = (float)calGZ / samples / 16.4;
-
-  Serial.println("Calibration done. Type 'start' to begin.");
 
   digitalWrite(LED_PIN, LOW);
 }
