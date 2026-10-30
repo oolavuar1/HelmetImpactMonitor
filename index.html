@@ -409,7 +409,7 @@
         <h2>Solder the harness</h2>
         <ul class="howto">
           <li>Solder everything as one harness before anything goes in the box.</li>
-          <li>Both sensors share four lines: SDA to pin 23, SCL to pin 22, 3V and ground. Each LED gets its own pin.</li>
+          <li>Both sensors share four lines to the board: its SDA pin, its SCL pin, 3V and ground. Both LEDs connect to pin 21.</li>
           <li>For each shared line, strip the middle of one wire with a craft knife and solder the second wire's end onto it. It makes a slimmer, shorter joint than twisting ends together.</li>
           <li>Ground needs four wires into one pin: one splice like the others, plus a joint between the stripped middles of two wires.</li>
           <li>Lay each LED leg parallel to its wire and solder it, with heat shrink on one leg so the legs can't short.</li>
@@ -991,7 +991,7 @@
     <tr><td>High-g accelerometer</td><td>ADXL375, ±200 g</td><td>H3LIS331, ±400 g</td><td>See below.</td></tr>
     <tr><td>Gyroscope</td><td>ISM330DHCX, ±4000 °/s</td><td>MPU-6050 gyro (±2000 °/s), LSM6DSO32, LSM6DSV80X</td><td>Headroom over the ~1277 °/s average concussive hit. The others lacked range or had no hobbyist board.</td></tr>
     <tr><td>Battery</td><td>3.7 V 1200 mAh LiPo</td><td>400 mAh, 500 mAh, a ~9 hour option</td><td>The ESP32 draws about 200 mA, so this gives about 5 hours. Practices never run longer, so a bigger battery was just extra size.</td></tr>
-    <tr><td>LEDs</td><td>Resistor-built-in red LEDs, each on its own pin</td><td>Super-bright red (no resistor), mixed-color kit</td><td>No separate resistors means less size and wiring and a closer model of a finished product. Red reads as an alert. Several LEDs leave room for different signals.</td></tr>
+    <tr><td>LEDs</td><td>Resistor-built-in red LEDs, both on pin 21</td><td>Super-bright red (no resistor), mixed-color kit</td><td>No separate resistors means less size and wiring and a closer model of a finished product. Red reads as an alert.</td></tr>
   </tbody>
 </table>
 <p><strong>ADXL375 over H3LIS331.</strong> The 400 g sensor looked safer for its headroom, so I checked whether football hits ever exceed 200 g: big hits run about 50 to 100 g, extreme outliers 150 to 180 g. Running at 400 g spreads the same resolution over twice the range, making readings coarser and filtering harder. The ADXL375 also samples up to 3200 Hz versus 1000 Hz, so I chose it.</p>
@@ -1297,7 +1297,7 @@
 <h3>Mixed LEDs</h3>
 <ul>
   <li>I soldered one super-bright LED by mistake beside a resistor-built-in LED. The super-bright one draws too much current straight from the pin.</li>
-  <li>The fix is a 100 Ω resistor spliced into its lead, which keeps the brightness. Since brightness won't match, each LED can use a different blink pattern.</li>
+  <li>The fix is a 100 Ω resistor spliced into its lead, which keeps the brightness.</li>
 </ul>
 </section>
 
