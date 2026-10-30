@@ -1,0 +1,26 @@
+drop,height_cm,peak_g,peak_dps,should_alert,did_alert,result
+1,60.96,84.82,275.9,yes,LINEAR,Pass
+2,60.96,74.88,231.6,no,No,Pass
+3,60.96,85.41,216.4,yes,LINEAR,Pass
+4,60.96,74.80,237.8,no,No,Pass
+5,60.96,82.69,235.2,yes,LINEAR,Pass (very close to a threshold)
+6,60.96,92.73,414.8,yes,LINEAR,Pass
+7,60.96,74.88,344.7,no,No,Pass
+8,60.96,93.14,309.4,yes,LINEAR,Pass
+9,60.96,96.24,332.5,yes,LINEAR,Pass
+10,60.96,83.96,277.1,yes,LINEAR,Pass (very close to a threshold)
+11,30.48,40.20,256.4,no,No,Pass
+12,30.48,49.04,326.2,no,No,Pass
+13,30.48,61.28,318.5,no,No,Pass
+14,30.48,64.46,237.0,no,No,Pass
+15,30.48,61.05,327.3,no,No,Pass
+16,91.44,115.89,316.4,yes,LINEAR,Pass
+17,91.44,114.97,326.8,yes,LINEAR,Pass
+18,91.44,109.29,311.2,yes,LINEAR,Pass
+19,91.44,125.61,393.0,yes,LINEAR,Pass
+20,91.44,122.43,353.8,yes,LINEAR,Pass
+21,30.48,50.47,341.9,no,No,Pass
+22,30.48,26.03,307.2,no,No,Pass
+23,30.48,53.13,341.2,no,No,Pass
+24,30.48,60.48,396.4,no,No,Pass
+25,30.48,64.10,275.4,no,No,Pass

@@ -1,0 +1,20 @@
+drop,height_cm,peak_g,contact_ms,impact_speed_ms,measured_dv_ms,ratio,samples_in_contact,result
+1,91.44,88.78,53.54,4.236,4.695,1.108,29,Matches the physics.
+2,91.44,87.14,51.77,4.236,5.371,1.268,28,Matches the physics.
+3,91.44,92.37,51.76,4.236,5.298,1.251,28,Matches the physics.
+4,91.44,101.80,46.20,4.236,4.890,1.155,25,Matches the physics.
+5,91.44,95.88,46.16,4.236,5.438,1.284,25,Matches the physics.
+6,60.96,80.13,44.32,3.458,4.391,1.270,24,Matches the physics.
+7,60.96,75.37,44.33,3.458,4.120,1.191,24,Matches the physics.
+8,60.96,72.70,46.23,3.458,4.223,1.221,23,Matches the physics.
+9,60.96,74.19,44.35,3.458,4.200,1.214,24,Matches the physics.
+10,121.92,115.51,64.71,4.891,6.160,1.260,35,Matches the physics.
+11,121.92,139.94,46.20,4.891,6.292,1.287,25,Matches the physics.
+12,121.92,103.83,68.32,4.891,5.483,1.121,37,Matches the physics.
+13,121.92,128.15,48.06,4.891,6.758,1.382,26,Matches the physics.
+14,121.92,127.48,75.71,4.891,7.047,1.441,41,Matches the physics.
+15,152.4,130.41,42.49,5.468,6.528,1.194,23,Matches the physics.
+16,152.4,126.60,48.06,5.468,6.204,1.135,26,Matches the physics.
+17,152.4,140.76,49.87,5.468,6.807,1.245,27,Matches the physics.
+18,152.4,103.45,55.41,5.468,5.205,0.952,30,Matches the physics.
+19,152.4,160.66,46.18,5.468,7.591,1.388,25,Matches the physics.

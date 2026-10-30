@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Helmet Impact Monitor Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14181B;
+    --panel:#1B2126;
+    --panel-raised:#20272C;
+    --line:#2A333A;
+    --text:#E7EBEE;
+    --muted:#889299;
+    --dim:#5B646B;
+    --ok:#4FD8C4;
+    --ok-dim:#2C5850;
+    --warn:#FF5B4E;
+    --warn-dim:#5A2E29;
+    --caution:#E8B04B;
+    --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  [hidden]{display:none !important;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-ui);
+    min-height:100vh;
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:920px; margin:0 auto;}
+
+  /* ── header / status bar ─────────────────────────────────────────── */
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px; flex-wrap:wrap;
+    padding-bottom:20px; margin-bottom:20px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex; align-items:baseline; gap:10px;}
+  .brand .mark{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.12em;
+    color:var(--dim); border:1px solid var(--line); border-radius:3px;
+    padding:2px 6px;
+  }
+  h1{font-size:18px; font-weight:600; letter-spacing:.01em;}
+  .status-row{display:flex; align-items:center; gap:12px;}
+  .status-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--dim); flex:none;
+    transition:background .2s;
+  }
+  .status-dot.live{background:var(--ok); box-shadow:0 0 8px var(--ok);}
+  .status-dot.alert{background:var(--warn); box-shadow:0 0 8px var(--warn);}
+  #statusText{font-family:var(--font-mono); font-size:13px; color:var(--muted);}
+  button{
+    font-family:var(--font-ui); font-weight:600; font-size:13px;
+    border-radius:6px; border:1px solid var(--line);
+    padding:10px 16px; cursor:pointer;
+    background:var(--panel-raised); color:var(--text);
+    transition:border-color .15s, background .15s;
+  }
+  button:hover{border-color:var(--ok);}
+  button:active{transform:translateY(1px);}
+  button:disabled{opacity:.4; cursor:not-allowed;}
+  #connectBtn{background:var(--ok); color:#0A1210; border-color:var(--ok);}
+  #connectBtn:hover{background:#66E3D1;}
+
+  /* ── tabs ────────────────────────────────────────────────────────── */
+  .tabs{display:flex; gap:4px; margin-bottom:20px; border-bottom:1px solid var(--line);}
+  .tab{
+    background:none; border:none; border-bottom:2px solid transparent; border-radius:0;
+    color:var(--muted); padding:10px 14px; margin-bottom:-1px;
+    font-family:var(--font-mono); font-size:12px; font-weight:500;
+    letter-spacing:.12em; text-transform:uppercase;
+  }
+  .tab:hover{color:var(--text); border-color:transparent; border-bottom-color:var(--line);}
+  .tab.active, .tab.active:hover{color:var(--text); border-bottom-color:var(--ok);}
+
+  /* ── unsupported banner ──────────────────────────────────────────── */
+  .banner{
+    display:none;
+    background:var(--warn-dim); border:1px solid var(--warn);
+    color:var(--text); padding:14px 16px; border-radius:8px;
+    font-size:13px; line-height:1.5; margin-bottom:20px;
+  }
+  .banner.show{display:block;}
+
+  /* ── readout cards ───────────────────────────────────────────────── */
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;}
+  @media (max-width:640px){.grid{grid-template-columns:1fr;}}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:20px;
+  }
+  .card-label{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.14em;
+    color:var(--muted); text-transform:uppercase; margin-bottom:10px;
+  }
+  .card-value{
+    font-family:var(--font-mono); font-size:40px; font-weight:500;
+    line-height:1; color:var(--text); margin-bottom:4px;
+    font-variant-numeric:tabular-nums;
+  }
+  .card-unit{font-family:var(--font-mono); font-size:13px; color:var(--dim);}
+
+  /* per-axis breakdown, secondary to the main total reading above */
+  .axis-row{
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;
+    margin-top:14px; padding-top:14px; border-top:1px solid var(--line);
+  }
+  .axis{display:flex; flex-direction:column; gap:2px;}
+  .axis-label{
+    font-family:var(--font-mono); font-size:10px; letter-spacing:.1em;
+    color:var(--dim); text-transform:uppercase;
+  }
+  .axis-val{
+    font-family:var(--font-mono); font-size:15px; color:var(--muted);
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* threshold gauge — the signature element: a proximity-to-threshold bar */
+  .gauge{
+    position:relative; height:8px; border-radius:4px;
+    background:var(--panel-raised); margin-top:16px; overflow:visible;
+  }
+  .gauge-fill{
+    position:absolute; left:0; top:0; height:100%; border-radius:4px;
+    background:var(--ok); width:0%;
+    transition:width .12s linear, background .15s;
+  }
+  .gauge-fill.hot{background:var(--warn);}
+  .gauge-threshold{
+    position:absolute; top:-4px; bottom:-4px; width:2px;
+    background:var(--dim); left:100%;
+  }
+  .gauge-caption{
+    display:flex; justify-content:space-between;
+    font-family:var(--font-mono); font-size:10px; color:var(--dim); margin-top:6px;
+  }
+
+  /* ── alert log (flight-recorder strip) ───────────────────────────── */
+  .log-card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:20px; margin-bottom:16px;}
+  #log{
+    font-family:var(--font-mono); font-size:12px; line-height:1.9;
+    max-height:180px; overflow-y:auto; color:var(--muted);
+  }
+  #log .entry{border-bottom:1px dashed var(--line); padding:4px 0;}
+  #log .entry.alert-line{color:var(--warn);}
+  #log:empty::before{content:"No events yet — connect and press start."; color:var(--dim);}
+
+  /* ── command dock ────────────────────────────────────────────────── */
+  .dock{
+    display:flex; gap:10px; flex-wrap:wrap;
+  }
+  .dock button{flex:1; min-width:110px;}
+
+  /* ── testing tab ─────────────────────────────────────────────────── */
+  .test-card{margin-bottom:16px;}
+  .help{font-size:13px; color:var(--muted); line-height:1.6;}
+  .help b{color:var(--text); font-weight:600;}
+  .note{
+    background:var(--panel-raised); border:1px solid var(--line); border-left:3px solid var(--caution);
+    border-radius:6px; padding:12px 14px; font-size:13px; line-height:1.5; color:var(--text);
+    margin-bottom:16px;
+  }
+  .device-line{font-family:var(--font-mono); font-size:12px; color:var(--dim); margin-bottom:16px;}
+  .device-line span{color:var(--muted);}
+  .test-row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:14px;}
+  .test-row label{font-family:var(--font-mono); font-size:12px; color:var(--muted);}
+  input[type=number]{
+    background:var(--bg); border:1px solid var(--line); color:var(--text);
+    font-family:var(--font-mono); font-size:13px; padding:9px 10px; border-radius:6px; width:100px;
+  }
+  input[type=number]:focus{outline:none; border-color:var(--ok);}
+  button.primary{background:var(--ok); color:#0A1210; border-color:var(--ok);}
+  button.primary:hover{background:#66E3D1;}
+  button.ghost{background:none;}
+  .status-line{font-family:var(--font-mono); font-size:12px; margin-top:12px; color:var(--muted); min-height:1.2em; line-height:1.5;}
+
+  .stat-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-top:14px;}
+  @media (max-width:640px){.stat-grid{grid-template-columns:1fr 1fr;}}
+  .stat{background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:12px;}
+  .stat .card-label{font-size:10px; margin-bottom:6px;}
+  .stat-val{font-family:var(--font-mono); font-size:22px; font-weight:500; font-variant-numeric:tabular-nums;}
+  .stat-val small{font-size:12px; color:var(--dim); font-weight:400;}
+
+  .table-wrap{overflow-x:auto; margin-top:14px;}
+  .ttable{width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:12px;}
+  .ttable th{
+    color:var(--dim); font-weight:500; text-align:left; padding:6px 8px; white-space:nowrap;
+    border-bottom:1px solid var(--line); letter-spacing:.08em; text-transform:uppercase; font-size:10px;
+  }
+  .ttable td{padding:7px 8px; border-bottom:1px dashed var(--line); color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .ttable td.wrap{white-space:normal; min-width:180px;}
+  .ttable tbody:empty::before{content:"No rows yet."; display:block; padding:8px; color:var(--dim);}
+  .v-ok{color:var(--ok) !important;}
+  .v-warn{color:var(--caution) !important;}
+  .v-bad{color:var(--warn) !important;}
+
+  canvas.plot{
+    width:100%; height:220px; display:block; margin-top:14px;
+    background:var(--bg); border:1px solid var(--line); border-radius:6px;
+  }
+  .plot-caption{font-family:var(--font-mono); font-size:11px; color:var(--dim); margin-top:6px;}
+
+  footer{
+    margin-top:28px; font-family:var(--font-mono); font-size:11px; color:var(--dim);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <span class="mark">V2 · BLE</span>
+      <h1>Helmet Impact Monitor Console</h1>
+    </div>
+    <div class="status-row">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Not connected</span>
+      <button id="connectBtn">Connect device</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-panel="monitor">Monitor</button>
+    <button class="tab" data-panel="test">Testing</button>
+  </nav>
+
+  <div class="banner" id="unsupportedBanner">
+    This browser doesn't support Web Bluetooth. Use <strong>Chrome</strong> or <strong>Edge</strong> —
+    on desktop that's any OS, on mobile it currently only works on <strong>Android</strong>.
+    iPhone's Safari does not support this API; use the LightBlue app instead if you're on iOS.
+  </div>
+
+  <!-- ═══════════════════════════ MONITOR TAB ═══════════════════════════ -->
+  <div id="panelMonitor">
+    <div class="grid">
+      <div class="card">
+        <div class="card-label">Linear acceleration</div>
+        <div class="card-value"><span id="accelValue">—</span></div>
+        <div class="card-unit">m/s² · threshold <span id="accelThreshLabel"></span></div>
+        <div class="axis-row">
+          <div class="axis"><span class="axis-label">X</span><span class="axis-val" id="accelX">—</span></div>
+          <div class="axis"><span class="axis-label">Y</span><span class="axis-val" id="accelY">—</span></div>
+          <div class="axis"><span class="axis-label">Z</span><span class="axis-val" id="accelZ">—</span></div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-fill" id="accelFill"></div>
+          <div class="gauge-threshold"></div>
+        </div>
+        <div class="gauge-caption"><span>0</span><span>threshold →</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Rotational velocity</div>
+        <div class="card-value"><span id="gyroValue">—</span></div>
+        <div class="card-unit">deg/s · threshold <span id="gyroThreshLabel"></span></div>
+        <div class="axis-row">
+          <div class="axis"><span class="axis-label">X</span><span class="axis-val" id="gyroX">—</span></div>
+          <div class="axis"><span class="axis-label">Y</span><span class="axis-val" id="gyroY">—</span></div>
+          <div class="axis"><span class="axis-label">Z</span><span class="axis-val" id="gyroZ">—</span></div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-fill" id="gyroFill"></div>
+          <div class="gauge-threshold"></div>
+        </div>
+        <div class="gauge-caption"><span>0</span><span>threshold →</span></div>
+      </div>
+    </div>
+
+    <div class="log-card">
+      <div class="card-label" style="margin-bottom:12px;">Event log</div>
+      <div id="log"></div>
+    </div>
+
+    <div class="dock">
+      <button id="btnStart">start</button>
+      <button id="btnStop">stop</button>
+      <button id="btnClear">clear</button>
+      <button id="btnCalibrate">calibrate</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ TESTING TAB ═══════════════════════════ -->
+  <div id="panelTest" hidden>
+
+    <div class="note" id="fwNote">Connect the device first (button in the top right).</div>
+    <div class="device-line">Last device message: <span id="devMsg">none yet</span></div>
+
+    <!-- 1. gravity check -->
+    <div class="card test-card">
+      <div class="card-label">1 · Gravity check</div>
+      <p class="help">
+        Checks that the accelerometer's scale and axes are right, using gravity as a known 1 g (9.81 m/s²).
+        <b>Stop the system</b>, set the device flat and still, press Read. Repeat with each of the 6 faces pointing down.
+        The total should read about 9.81 every time.
+      </p>
+      <div class="test-row">
+        <button class="primary" id="btnGravity">Read gravity</button>
+        <button class="ghost" id="btnGravCsv">Export CSV</button>
+      </div>
+      <div class="status-line" id="gravSummary"></div>
+      <div class="table-wrap">
+        <table class="ttable">
+          <thead><tr><th>#</th><th>Facing down</th><th>X</th><th>Y</th><th>Z</th><th>Total m/s²</th><th>Result</th></tr></thead>
+          <tbody id="gravBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. sample rate -->
+    <div class="card test-card">
+      <div class="card-label">2 · Sample rate</div>
+      <p class="help">
+        Checks how often the code actually gets a new reading. A hard hit can peak and drop in a few milliseconds,
+        so slow sampling can miss the true peak and read low. <b>Press start</b> on the Monitor tab and leave it running;
+        this updates on its own.
+      </p>
+      <div class="stat-grid">
+        <div class="stat"><div class="card-label">Loop speed</div><div class="stat-val"><span id="rateLoop">—</span> <small>/s</small></div></div>
+        <div class="stat"><div class="card-label">New samples</div><div class="stat-val"><span id="rateEff">—</span> <small>/s</small></div></div>
+        <div class="stat"><div class="card-label">Gap between</div><div class="stat-val"><span id="rateGap">—</span> <small>ms</small></div></div>
+        <div class="stat"><div class="card-label">Samples in 5 ms hit</div><div class="stat-val"><span id="rateSamples">—</span></div></div>
+      </div>
+      <div class="status-line" id="rateVerdict"></div>
+    </div>
+
+    <!-- 3. accuracy drops -->
+    <div class="card test-card">
+      <div class="card-label">3 · Accuracy drops (impulse check)</div>
+      <p class="help">
+        Checks whether an impact that should read 80 g actually reads 80 g. A drop from height h hits at a known speed,
+        √(2gh). Adding up the acceleration over the whole impact has to give that speed, plus however fast it bounced back,
+        so the total should land between <b>1× and 2×</b> the impact speed. Well under 1× means the sensor is reading low.
+        <br><b>Stop the system</b>, enter the height, press Arm, then drop. Keep the device side off the ground.
+      </p>
+      <div class="test-row">
+        <label for="capHeight">Drop height</label>
+        <input type="number" id="capHeight" min="1" step="1" placeholder="cm">
+        <button class="primary" id="btnArm">Arm capture</button>
+        <button class="ghost" id="btnDisarm">Cancel</button>
+        <button class="ghost" id="btnCapCsv">Export CSV</button>
+      </div>
+      <div class="status-line" id="capStatus"></div>
+
+      <canvas class="plot" id="waveCanvas"></canvas>
+      <div class="plot-caption">Last capture · impact reading (g) over time (ms) · shaded = contact with the ground</div>
+
+      <div class="table-wrap">
+        <table class="ttable">
+          <thead><tr>
+            <th>#</th><th>Height cm</th><th>Peak g</th><th>Contact ms</th><th>Impact speed m/s</th>
+            <th>Measured Δv m/s</th><th>Ratio</th><th>Samples in contact</th><th>Result</th>
+          </tr></thead>
+          <tbody id="capBody"></tbody>
+        </table>
+      </div>
+
+      <canvas class="plot" id="peakCanvas"></canvas>
+      <div class="plot-caption" id="fitText">Peak g vs drop height · needs at least 2 drops for a trend line</div>
+    </div>
+
+    <!-- 4. alert logic drops -->
+    <div class="card test-card">
+      <div class="card-label">4 · Alert drops (logic check)</div>
+      <p class="help">
+        Checks that the alert fires when it should and stays quiet when it shouldn't.
+        <b>Press start</b> on the Monitor tab first. Press Ready, drop, then press Record.
+        Any hit over the threshold should alert; anything under should not.
+      </p>
+      <div class="test-row">
+        <label for="alertHeight">Drop height</label>
+        <input type="number" id="alertHeight" min="1" step="1" placeholder="cm">
+        <button class="primary" id="btnReady">Ready</button>
+        <button id="btnRecord">Record</button>
+        <button id="btnTestClear">Reset alert</button>
+        <button class="ghost" id="btnAlertCsv">Export CSV</button>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><div class="card-label">Biggest hit</div><div class="stat-val"><span id="holdG">—</span> <small>g</small></div></div>
+        <div class="stat"><div class="card-label">Biggest rotation</div><div class="stat-val"><span id="holdDps">—</span> <small>°/s</small></div></div>
+        <div class="stat"><div class="card-label">Alert fired</div><div class="stat-val" id="holdAlertTxt">—</div></div>
+        <div class="stat"><div class="card-label">Thresholds</div><div class="stat-val"><span id="threshTxt"></span></div></div>
+      </div>
+      <div class="status-line" id="alertStatus"></div>
+      <div class="table-wrap">
+        <table class="ttable">
+          <thead><tr>
+            <th>#</th><th>Height cm</th><th>Peak g</th><th>Peak °/s</th><th>Should alert</th><th>Did alert</th><th>Result</th>
+          </tr></thead>
+          <tbody id="alertBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 5. rotation check -->
+    <div class="card test-card">
+      <div class="card-label">5 · Rotation check (angle)</div>
+      <p class="help">
+        Checks that the gyroscope reads rotation speed correctly. If it does, adding up its readings over a turn
+        (speed × time) has to equal the angle you actually turned, however fast or slow you went.
+        <b>Stop the system</b>, line the helmet up with your start mark, enter the angle, press Arm and keep it still
+        for half a second while it zeroes. Turn it in one smooth motion and stop lined up on the end mark.
+        It <b>stops on its own</b> once the helmet has been slower than the turning speed for half a second.
+        Any nudge after that isn't counted, so stop cleanly on the mark. Stop (manual) is there as a backup.
+        <br>Every turn is measured two ways. <b>Whole turn</b>: rotation is added up from Arm until it stops.
+        <b>Threshold</b>: only samples faster than the "turning" speed count; turning time = those samples ÷ the sample rate,
+        and the gyro's average speed over that time is compared to the true angle ÷ that time.
+      </p>
+      <div class="test-row">
+        <label for="rotAngle">True angle</label>
+        <input type="number" id="rotAngle" min="1" step="1" placeholder="deg">
+        <button class="primary" id="btnRotArm">Arm</button>
+        <button id="btnRotStop">Stop (manual)</button>
+        <button class="ghost" id="btnRotCsv">Export CSV</button>
+      </div>
+      <div class="status-line" id="rotStatus"></div>
+      <div class="stat-grid">
+        <div class="stat"><div class="card-label">Scale (1.000 = perfect)</div><div class="stat-val"><span id="rotScale">—</span></div></div>
+        <div class="stat"><div class="card-label">Average error</div><div class="stat-val"><span id="rotErr">—</span> <small>°</small></div></div>
+        <div class="stat"><div class="card-label">Fastest turn</div><div class="stat-val"><span id="rotMax">—</span> <small>°/s</small></div></div>
+        <div class="stat"><div class="card-label">Zero drift</div><div class="stat-val"><span id="rotDrift">—</span> <small>°/s</small></div></div>
+      </div>
+      <div class="table-wrap">
+        <table class="ttable">
+          <thead><tr>
+            <th>#</th><th>True °</th><th>Whole turn °</th><th>Error %</th>
+            <th>Turning s</th><th>True avg °/s</th><th>Gyro avg °/s</th><th>Threshold error %</th>
+            <th>Peak °/s</th><th>Result</th>
+          </tr></thead>
+          <tbody id="rotBody"></tbody>
+        </table>
+      </div>
+      <canvas class="plot" id="rotCanvas"></canvas>
+      <div class="plot-caption" id="rotFitText">Measured vs true angle · dashed line = perfect gyro</div>
+    </div>
+  </div>
+
+  <footer>ConcussionMonitor · Service ed2ce7c9-6308-447f-87ca-afc3fd8b23db</footer>
+</div>
+
+<script>
+// ── Config — must match the UUIDs in the ESP32 sketch exactly ──────────────
+const DEVICE_NAME     = "ConcussionMonitor";
+const SERVICE_UUID    = "ed2ce7c9-6308-447f-87ca-afc3fd8b23db";
+const ACCEL_CHAR_UUID = "aced99c9-0a3b-4a27-89ad-1f9138e7d810";
+const GYRO_CHAR_UUID  = "4e65c5cf-f34e-4a09-82ba-04cfc23ac634";
+const ALERT_CHAR_UUID = "c9fd843f-c392-4eec-afbd-ecf46c16bb44";
+const COMMAND_CHAR_UUID = "3c50cfa9-9f5a-42e3-b08a-357c1efbf4f2";
+const STATUS_CHAR_UUID = "ba8a5476-129b-4470-87d6-814bda7c4c3c";
+const TEST_CHAR_UUID   = "8d20860e-d033-474a-9703-bd1da03201a0"; //testing data (gravity readings, impact captures)
+
+//must match TEST_MODE and the thresholds in the ESP32 sketch
+const TEST_MODE = false;
+const ACCEL_THRESHOLD = TEST_MODE ? 30.0  : 784.8;   //m/s^2 (80g)
+const GYRO_THRESHOLD  = TEST_MODE ? 500.0 : 1000.0;  //dps
+
+//testing tab settings
+const G = 9.81;
+const SENSOR_ODR_HZ = 800;   //must match adxl.setDataRate() in the sketch (800, 1600 or 3200)
+const CONTACT_G = 2;         //a raw reading above 2 g counts as "touching the ground" during a capture
+
+//fill the threshold labels on the cards from the constants above
+const modeTag = TEST_MODE ? ' (test)' : '';
+document.getElementById('accelThreshLabel').textContent = ACCEL_THRESHOLD.toFixed(1) + modeTag;
+document.getElementById('gyroThreshLabel').textContent  = GYRO_THRESHOLD.toFixed(1) + modeTag;
+
+let device, server, commandChar;
+let testChar = null;
+
+const statusDot  = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const connectBtn = document.getElementById('connectBtn');
+const logEl      = document.getElementById('log');
+
+function logEvent(text, isAlert=false){
+  const row = document.createElement('div');
+  row.className = 'entry' + (isAlert ? ' alert-line' : '');
+  row.textContent = text;
+  logEl.prepend(row);
+}
+
+function setStatus(state, text){
+  statusDot.className = 'status-dot' + (state ? ' ' + state : '');
+  statusText.textContent = text;
+}
+
+function updateGauge(fillId, value, threshold){
+  const fill = document.getElementById(fillId);
+  const pct = Math.min((value / threshold) * 100, 130);
+  fill.style.width = Math.min(pct, 100) + '%';
+  fill.classList.toggle('hot', value >= threshold);
+}
+
+if (!navigator.bluetooth) {
+  document.getElementById('unsupportedBanner').classList.add('show');
+  connectBtn.disabled = true;
+}
+
+connectBtn.addEventListener('click', async () => {
+  try {
+    setStatus(null, 'Requesting device…');
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [SERVICE_UUID] }]
+    });
+
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+
+    setStatus(null, 'Connecting…');
+    server = await device.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE_UUID);
+
+    const accelChar = await service.getCharacteristic(ACCEL_CHAR_UUID);
+    const gyroChar  = await service.getCharacteristic(GYRO_CHAR_UUID);
+    const alertChar = await service.getCharacteristic(ALERT_CHAR_UUID);
+    const statusChar = await service.getCharacteristic(STATUS_CHAR_UUID);
+    commandChar      = await service.getCharacteristic(COMMAND_CHAR_UUID);
+
+    await accelChar.startNotifications();
+    accelChar.addEventListener('characteristicvaluechanged', e => {
+      const val = new TextDecoder().decode(e.target.value);
+      const parts = val.split(',').map(parseFloat);
+      if (parts.length < 4 || parts.some(isNaN)) return; //ignore malformed/partial packets
+      const [x, y, z, sum] = parts;
+      document.getElementById('accelValue').textContent = sum.toFixed(2);
+      document.getElementById('accelX').textContent = x.toFixed(2);
+      document.getElementById('accelY').textContent = y.toFixed(2);
+      document.getElementById('accelZ').textContent = z.toFixed(2);
+      updateGauge('accelFill', sum, ACCEL_THRESHOLD);
+      testOnAccelWindow(parts); //testing tab: peak hold + sample rate
+    });
+
+    await gyroChar.startNotifications();
+    gyroChar.addEventListener('characteristicvaluechanged', e => {
+      const val = new TextDecoder().decode(e.target.value);
+      const parts = val.split(',').map(parseFloat);
+      if (parts.length < 4 || parts.some(isNaN)) return; //ignore malformed/partial packets
+      const [x, y, z, sum] = parts;
+      document.getElementById('gyroValue').textContent = sum.toFixed(2);
+      document.getElementById('gyroX').textContent = x.toFixed(2);
+      document.getElementById('gyroY').textContent = y.toFixed(2);
+      document.getElementById('gyroZ').textContent = z.toFixed(2);
+      updateGauge('gyroFill', sum, GYRO_THRESHOLD);
+      testOnGyroWindow(sum); //testing tab: peak hold
+    });
+
+    await alertChar.startNotifications();
+    alertChar.addEventListener('characteristicvaluechanged', e => {
+      const val = new TextDecoder().decode(e.target.value);
+      const [reason, value, unit] = val.split(',');
+      logEvent(`ALERT — ${reason} impact, ${value} ${unit}`, true);
+      setStatus('alert', 'Alert triggered');
+      setTimeout(() => { if (device?.gatt.connected) setStatus('live', `Connected — ${DEVICE_NAME}`); }, 2500);
+      testOnAlert(reason, parseFloat(value)); //testing tab: record that the alert fired
+    });
+
+    await statusChar.startNotifications();
+    statusChar.addEventListener('characteristicvaluechanged', e => {
+      const val = new TextDecoder().decode(e.target.value);
+      logEvent(val); //same wording the Serial Monitor shows for this command
+      testOnStatus(val); //testing tab: mirror the latest device message
+    });
+
+    //testing characteristic is optional, so older firmware without it still connects fine
+    try {
+      testChar = await service.getCharacteristic(TEST_CHAR_UUID);
+      await testChar.startNotifications();
+      testChar.addEventListener('characteristicvaluechanged', e => {
+        testOnMessage(new TextDecoder().decode(e.target.value));
+      });
+      testSetFirmware(true);
+    } catch (err) {
+      testChar = null;
+      testSetFirmware(false);
+    }
+
+    setStatus('live', `Connected — ${DEVICE_NAME}`);
+    logEvent('Connected to device.');
+    connectBtn.textContent = 'Disconnect';
+    connectBtn.onclick = () => device.gatt.disconnect();
+
+  } catch (err) {
+    console.error(err);
+    setStatus(null, 'Not connected');
+    logEvent(`Connection failed: ${err.message}`);
+  }
+});
+
+function onDisconnected(){
+  setStatus(null, 'Not connected');
+  logEvent('Device disconnected.');
+  connectBtn.textContent = 'Connect device';
+  connectBtn.onclick = () => connectBtn.dispatchEvent(new Event('click'));
+  //simplest way to reset listeners cleanly for the next connect
+  //(opened from the portfolio file, there's no page to reload, so ask it for a fresh console window)
+  if (document.querySelector('meta[name="from-portfolio"]') && window.opener && window.opener.openConsole) { window.opener.openConsole(); window.close(); }
+  else location.reload();
+}
+
+async function sendCommand(cmd){
+  if (!commandChar) { logEvent('Not connected — cannot send command.'); return; }
+  try {
+    await commandChar.writeValue(new TextEncoder().encode(cmd));
+  } catch (err) {
+    logEvent(`Command failed: ${err.message}`);
+  }
+}
+
+document.getElementById('btnStart').addEventListener('click', () => sendCommand('start'));
+document.getElementById('btnStop').addEventListener('click', () => sendCommand('stop'));
+document.getElementById('btnClear').addEventListener('click', () => sendCommand('clear'));
+document.getElementById('btnCalibrate').addEventListener('click', () => sendCommand('calibrate'));
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// TESTING TAB
+// Everything below only touches the Testing tab. The monitor above calls into it
+// through the testOn...() hooks.
+// ════════════════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+
+//tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
+    $('panelMonitor').hidden = tab.dataset.panel !== 'monitor';
+    $('panelTest').hidden    = tab.dataset.panel !== 'test';
+    if (tab.dataset.panel === 'test') { drawWave(); drawPeakPlot(); } //canvases can only size themselves once visible
+  });
+});
+
+$('threshTxt').innerHTML = `${(ACCEL_THRESHOLD / G).toFixed(0)}<small> g</small> · ${GYRO_THRESHOLD.toFixed(0)}<small> °/s</small>`;
+
+function testSetFirmware(ok){
+  const note = $('fwNote');
+  if (ok) { note.hidden = true; return; }
+  note.hidden = false;
+  note.textContent = "Connected, but the device firmware doesn't have the testing additions yet. " +
+    "Sections 1, 2 and 3 need them; section 4 works now.";
+}
+
+function testOnStatus(text){
+  $('devMsg').textContent = text;
+  //surface refusals in the section that caused them
+  if (/before arming|before a gravity/i.test(text)) {
+    setLine('capStatus', text, 'bad');
+    setLine('gravSummary', text, 'bad');
+  }
+  if (/^Capture armed/i.test(text)) setLine('capStatus', `Armed for a ${pendingHeight} cm drop. Drop when ready.`, null);
+  if (/^Impact captured/i.test(text)) setLine('capStatus', 'Impact detected. Receiving data…', null);
+  if (/before a rotation|No rotation check|No turn detected/i.test(text)) setLine('rotStatus', text, 'bad');
+  if (/^Turning/i.test(text)) setLine('rotStatus', 'Turning… it will stop on its own once the helmet settles.', null);
+  if (/^Zeroing gyro/i.test(text)) setLine('rotStatus', 'Zeroing… keep the helmet still.', null);
+  if (/^Rotation armed/i.test(text)) setLine('rotStatus', `Armed for ${rotPending}°. Turn it when ready; it stops on its own.`, null);
+}
+
+function setLine(id, text, kind){
+  const el = $(id);
+  el.textContent = text;
+  el.className = 'status-line' + (kind ? ' v-' + kind : '');
+}
+
+function testOnMessage(text){
+  if (text.startsWith('GRAV,')) {
+    const [x, y, z] = text.split(',').slice(1).map(Number);
+    if ([x, y, z].some(isNaN)) return;
+    onGravity(x, y, z);
+  } else if (text.startsWith('ROT,')) {
+    const p = text.split(',').slice(1).map(Number);
+    if (p.length < 7 || p.some(isNaN)) return;
+    onRotation(p);
+  } else if (text.startsWith('CAP_BEGIN,')) {
+    const p = text.split(',').slice(1).map(Number);
+    cap = { n: p[0], base: [p[1], p[2], p[3]], t: [], a: [], bad: false };
+  } else if (text.startsWith('C,')) {
+    if (!cap) return;
+    const p = text.split(',').slice(1).map(Number);
+    if (p.length < 4 || p.some(isNaN)) { cap.bad = true; return; }
+    cap.t.push(p[0]);
+    cap.a.push([p[1], p[2], p[3]]);
+    if (cap.t.length % 32 === 0) setLine('capStatus', `Receiving data… ${Math.round(100 * cap.t.length / cap.n)}%`, null);
+  } else if (text === 'CAP_END') {
+    finishCapture();
+  }
+}
+
+function downloadCSV(filename, header, rows){
+  if (!rows.length) return;
+  const esc = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const csv = [header, ...rows].map(r => r.map(esc).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+const verdictCell = (text, kind) => `<td class="wrap v-${kind}">${text}</td>`;
+
+// ── 1. gravity check ────────────────────────────────────────────────────────
+const gravRows = [];
+
+$('btnGravity').addEventListener('click', () => {
+  if (!testChar) { setLine('gravSummary', 'Needs the firmware testing additions.', 'bad'); return; }
+  setLine('gravSummary', 'Reading… keep it still.', null);
+  sendCommand('gravity');
+});
+
+function onGravity(x, y, z){
+  const total = Math.hypot(x, y, z);
+  //the axis with the biggest reading is the one pointing down (or up)
+  const axes = [['X', x], ['Y', y], ['Z', z]];
+  const main = axes.reduce((a, b) => Math.abs(b[1]) > Math.abs(a[1]) ? b : a);
+  const face = main[0] + (main[1] >= 0 ? '+' : '−');
+  const err = Math.abs(total - G);
+  const kind = err <= 1.0 ? 'ok' : err <= 2.0 ? 'warn' : 'bad';
+  const text = kind === 'ok' ? 'Good' : kind === 'warn' ? 'A little off' : 'Off: check scale/wiring';
+  gravRows.push({ x, y, z, total, face, kind, text });
+  renderGravity();
+}
+
+function renderGravity(){
+  $('gravBody').innerHTML = gravRows.map((r, i) => `<tr>
+    <td>${i + 1}</td><td>${r.face}</td><td>${r.x.toFixed(2)}</td><td>${r.y.toFixed(2)}</td><td>${r.z.toFixed(2)}</td>
+    <td>${r.total.toFixed(2)}</td>${verdictCell(r.text, r.kind)}</tr>`).join('');
+  const faces = new Set(gravRows.map(r => r.face));
+  const avg = gravRows.reduce((s, r) => s + r.total, 0) / gravRows.length;
+  setLine('gravSummary',
+    `${faces.size} of 6 faces done (${[...faces].join(' ')}) · average total ${avg.toFixed(2)} m/s² (should be 9.81)`,
+    faces.size === 6 ? 'ok' : null);
+}
+
+$('btnGravCsv').addEventListener('click', () => downloadCSV('gravity_check.csv',
+  ['reading', 'facing_down', 'x_ms2', 'y_ms2', 'z_ms2', 'total_ms2', 'result'],
+  gravRows.map((r, i) => [i + 1, r.face, r.x.toFixed(3), r.y.toFixed(3), r.z.toFixed(3), r.total.toFixed(3), r.text])));
+
+// ── 2. sample rate ──────────────────────────────────────────────────────────
+const rateHist = [];
+
+function onWindowStats(loops, ms){
+  if (!(ms > 0)) return;
+  rateHist.push(loops / (ms / 1000));
+  if (rateHist.length > 20) rateHist.shift(); //average over the last ~1 second
+  const loopHz = rateHist.reduce((a, b) => a + b, 0) / rateHist.length;
+  const effHz = Math.min(loopHz, SENSOR_ODR_HZ); //can't get new samples faster than the sensor makes them
+  $('rateLoop').textContent = loopHz.toFixed(0);
+  $('rateEff').textContent = effHz.toFixed(0);
+  $('rateGap').textContent = (1000 / effHz).toFixed(2);
+  $('rateSamples').textContent = (effHz * 0.005).toFixed(1);
+
+  if (loopHz < SENSOR_ODR_HZ * 0.9) {
+    setLine('rateVerdict', `The loop (${loopHz.toFixed(0)}/s) is slower than the sensor (${SENSOR_ODR_HZ}/s), so new samples are being skipped. Speed up the loop before raising the sensor rate.`, 'bad');
+  } else if (SENSOR_ODR_HZ < 3200 && loopHz > SENSOR_ODR_HZ * 1.5) {
+    setLine('rateVerdict', `The loop keeps up with room to spare, so the sensor's ${SENSOR_ODR_HZ}/s setting is the limit. Raising it would catch short peaks better.`, 'warn');
+  } else {
+    setLine('rateVerdict', 'The loop keeps up with the sensor.', 'ok');
+  }
+}
+
+// ── 3. accuracy drops ───────────────────────────────────────────────────────
+let cap = null;            //capture currently being received
+let pendingHeight = null;  //height entered when the capture was armed
+let lastWave = null;
+const capRows = [];
+
+$('btnArm').addEventListener('click', () => {
+  const h = parseFloat($('capHeight').value);
+  if (!(h > 0)) { setLine('capStatus', 'Enter the drop height first.', 'bad'); return; }
+  if (!testChar) { setLine('capStatus', 'Needs the firmware testing additions.', 'bad'); return; }
+  pendingHeight = h;
+  setLine('capStatus', 'Arming…', null);
+  sendCommand('arm');
+});
+
+$('btnDisarm').addEventListener('click', () => {
+  sendCommand('disarm');
+  cap = null;
+  setLine('capStatus', 'Capture cancelled.', null);
+});
+
+function finishCapture(){
+  const c = cap;
+  cap = null;
+  if (!c) return;
+  if (c.bad || c.t.length < c.n * 0.9 || c.t.length < 10) {
+    setLine('capStatus', `Only got ${c.t.length} of ${c.n} samples, so this drop wasn't saved. Try again; if it keeps happening, the Bluetooth packets are too small (check setMTU in the sketch).`, 'bad');
+    return;
+  }
+  const r = analyzeCapture(c, pendingHeight);
+  capRows.push(r);
+  lastWave = r.wave;
+  renderCaptures();
+  drawWave();
+  drawPeakPlot();
+  setLine('capStatus', `Drop ${capRows.length} saved: ${r.text}`, r.kind);
+}
+
+function analyzeCapture(c, heightCm){
+  const n = c.t.length;
+  const [bx, by, bz] = c.base;
+  const rawMag = c.a.map(([x, y, z]) => Math.hypot(x, y, z));
+  //impact reading = raw minus the resting gravity vector, same math the monitor uses
+  const impMag = c.a.map(([x, y, z]) => Math.hypot(x - bx, y - by, z - bz));
+
+  let p = 0;
+  impMag.forEach((v, i) => { if (v > impMag[p]) p = i; });
+
+  //contact window: walk outward from the peak while the raw reading is above 2 g
+  //(free fall reads ~0 g and resting reads 1 g, so anything above 2 g is the helmet touching the ground)
+  const thr = CONTACT_G * G, GAP = 3;
+  let s = p, e = p;
+  for (let i = p - 1, gap = 0; i >= 0; i--)  { if (rawMag[i] > thr) { s = i; gap = 0; } else if (++gap > GAP) break; }
+  for (let i = p + 1, gap = 0; i < n; i++)   { if (rawMag[i] > thr) { e = i; gap = 0; } else if (++gap > GAP) break; }
+  s = Math.max(0, s - 1);
+  e = Math.min(n - 1, e + 1);
+
+  //change in velocity = area under the raw acceleration curve during contact (trapezoid rule)
+  //raw readings are used so the answer doesn't depend on which way the helmet was facing
+  let dvx = 0, dvy = 0, dvz = 0;
+  for (let i = s; i < e; i++) {
+    const dt = (c.t[i + 1] - c.t[i]) / 1e6;
+    dvx += (c.a[i][0] + c.a[i + 1][0]) / 2 * dt;
+    dvy += (c.a[i][1] + c.a[i + 1][1]) / 2 * dt;
+    dvz += (c.a[i][2] + c.a[i + 1][2]) / 2 * dt;
+  }
+  const dv = Math.hypot(dvx, dvy, dvz);
+  const vin = Math.sqrt(2 * G * heightCm / 100);
+  const ratio = dv / vin;
+
+  //the code can read faster than the sensor updates, so count only readings that actually changed
+  let fresh = 0;
+  for (let i = s + 1; i <= e; i++) {
+    const [a1, b1, c1] = c.a[i], [a0, b0, c0] = c.a[i - 1];
+    if (a1 !== a0 || b1 !== b0 || c1 !== c0) fresh++;
+  }
+
+  let kind, text;
+  if (ratio < 0.85)      { kind = 'bad';  text = 'Reads LOW: less than the impact speed. Peaks may be missed or under-read.'; }
+  else if (ratio <= 2.15) { kind = 'ok';   text = 'Matches the physics.'; }
+  else                   { kind = 'warn'; text = 'Reads HIGH: check the drop height, and that it was released, not pushed. Repeat it.'; }
+  if (fresh < 4) {
+    kind = kind === 'ok' ? 'warn' : kind;
+    text += ` Only ${fresh} new samples during contact, so the peak itself could be missed.`;
+  }
+
+  return {
+    height: heightCm,
+    peakG: impMag[p] / G,
+    contactMs: (c.t[e] - c.t[s]) / 1000,
+    vin, dv, ratio, fresh, kind, text,
+    wave: { t: c.t.map(t => (t - c.t[p]) / 1000), g: impMag.map(v => v / G), s, e }
+  };
+}
+
+function renderCaptures(){
+  $('capBody').innerHTML = capRows.map((r, i) => `<tr>
+    <td>${i + 1}</td><td>${r.height}</td><td>${r.peakG.toFixed(1)}</td><td>${r.contactMs.toFixed(1)}</td>
+    <td>${r.vin.toFixed(2)}</td><td>${r.dv.toFixed(2)}</td><td class="v-${r.kind}">${r.ratio.toFixed(2)}×</td>
+    <td>${r.fresh}</td>${verdictCell(r.text, r.kind)}</tr>`).join('');
+}
+
+$('btnCapCsv').addEventListener('click', () => downloadCSV('accuracy_drops.csv',
+  ['drop', 'height_cm', 'peak_g', 'contact_ms', 'impact_speed_ms', 'measured_dv_ms', 'ratio', 'samples_in_contact', 'result'],
+  capRows.map((r, i) => [i + 1, r.height, r.peakG.toFixed(2), r.contactMs.toFixed(2), r.vin.toFixed(3),
+    r.dv.toFixed(3), r.ratio.toFixed(3), r.fresh, r.text])));
+
+// ── plots ───────────────────────────────────────────────────────────────────
+function prepCanvas(cv){
+  const rect = cv.getBoundingClientRect();
+  if (rect.width === 0) return null; //tab hidden
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = rect.width * dpr;
+  cv.height = rect.height * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, w: rect.width, h: rect.height };
+}
+
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+function drawAxes(ctx, w, h, m, xMax, yMax, xLabel, yLabel, xMin = 0){
+  ctx.strokeStyle = css('--line');
+  ctx.fillStyle = css('--dim');
+  ctx.font = '11px IBM Plex Mono, monospace';
+  ctx.lineWidth = 1;
+  for (let k = 0; k <= 4; k++) {
+    const y = m.t + (h - m.t - m.b) * (1 - k / 4);
+    ctx.beginPath(); ctx.moveTo(m.l, y); ctx.lineTo(w - m.r, y); ctx.stroke();
+    ctx.textAlign = 'right';
+    ctx.fillText((yMax * k / 4).toFixed(0), m.l - 6, y + 4);
+  }
+  ctx.textAlign = 'center';
+  for (let k = 0; k <= 4; k++) {
+    const x = m.l + (w - m.l - m.r) * k / 4;
+    ctx.fillText((xMin + (xMax - xMin) * k / 4).toFixed(0), x, h - m.b + 16);
+  }
+  ctx.fillText(xLabel, m.l + (w - m.l - m.r) / 2, h - 4);
+  ctx.save();
+  ctx.translate(12, m.t + (h - m.t - m.b) / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(yLabel, 0, 0);
+  ctx.restore();
+}
+
+function drawThresholdLine(ctx, w, m, yPix){
+  ctx.strokeStyle = css('--warn');
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath(); ctx.moveTo(m.l, yPix); ctx.lineTo(w - m.r, yPix); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = css('--warn');
+  ctx.textAlign = 'right';
+  ctx.fillText('alert line', w - m.r - 4, yPix - 5);
+}
+
+function drawWave(){
+  const c = prepCanvas($('waveCanvas'));
+  if (!c) return;
+  const { ctx, w, h } = c;
+  const m = { l: 44, r: 12, t: 12, b: 34 };
+  if (!lastWave) {
+    ctx.fillStyle = css('--dim'); ctx.font = '12px IBM Plex Mono, monospace'; ctx.textAlign = 'center';
+    ctx.fillText('No capture yet', w / 2, h / 2);
+    return;
+  }
+  const { t, g, s, e } = lastWave;
+  const target = ACCEL_THRESHOLD / G;
+  const xMin = t[0], xMax = t[t.length - 1];
+  const yMax = Math.max(Math.max(...g), target) * 1.15;
+  const X = v => m.l + (v - xMin) / (xMax - xMin) * (w - m.l - m.r);
+  const Y = v => m.t + (1 - v / yMax) * (h - m.t - m.b);
+
+  //shade the contact window
+  ctx.fillStyle = 'rgba(79, 216, 196, 0.10)';
+  ctx.fillRect(X(t[s]), m.t, X(t[e]) - X(t[s]), h - m.t - m.b);
+
+  drawAxes(ctx, w, h, m, xMax, yMax, 'ms from peak', 'g', xMin);
+  drawThresholdLine(ctx, w, m, Y(target));
+
+  ctx.strokeStyle = css('--ok');
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  t.forEach((tv, i) => i ? ctx.lineTo(X(tv), Y(g[i])) : ctx.moveTo(X(tv), Y(g[i])));
+  ctx.stroke();
+}
+
+function drawPeakPlot(){
+  const c = prepCanvas($('peakCanvas'));
+  if (!c) return;
+  const { ctx, w, h } = c;
+  const m = { l: 44, r: 12, t: 12, b: 34 };
+  const target = ACCEL_THRESHOLD / G;
+  const pts = capRows.map(r => [r.height, r.peakG]);
+  const xMax = Math.max(50, ...pts.map(p => p[0])) * 1.15;
+  const yMax = Math.max(target, ...pts.map(p => p[1])) * 1.2;
+  const X = v => m.l + v / xMax * (w - m.l - m.r);
+  const Y = v => m.t + (1 - v / yMax) * (h - m.t - m.b);
+
+  drawAxes(ctx, w, h, m, xMax, yMax, 'drop height (cm)', 'peak g');
+  drawThresholdLine(ctx, w, m, Y(target));
+
+  //straight-line fit through zero: peak g roughly scales with drop height on the same surface
+  if (pts.length >= 2) {
+    const k = pts.reduce((s, [x, y]) => s + x * y, 0) / pts.reduce((s, [x]) => s + x * x, 0);
+    ctx.strokeStyle = css('--muted');
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(xMax), Y(k * xMax)); ctx.stroke();
+    ctx.setLineDash([]);
+    const hTarget = target / k;
+    $('fitText').textContent = `Peak g vs drop height · trend: ${k.toFixed(2)} g per cm · estimated height to reach the alert line (${target.toFixed(0)} g): ${hTarget.toFixed(0)} cm`;
+  }
+
+  pts.forEach(([x, y], i) => {
+    ctx.fillStyle = css(`--${capRows[i].kind === 'ok' ? 'ok' : capRows[i].kind === 'warn' ? 'caution' : 'warn'}`);
+    ctx.beginPath(); ctx.arc(X(x), Y(y), 4, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
+window.addEventListener('resize', () => { drawWave(); drawPeakPlot(); });
+
+// ── 4. alert drops ──────────────────────────────────────────────────────────
+let hold = { g: 0, dps: 0 };
+let holdAlert = null;
+let holdActive = false;
+const alertRows = [];
+
+function renderHold(){
+  $('holdG').textContent = holdActive || alertRows.length ? hold.g.toFixed(1) : '—';
+  $('holdDps').textContent = holdActive || alertRows.length ? hold.dps.toFixed(0) : '—';
+  $('holdAlertTxt').textContent = holdAlert ? 'Yes' : (holdActive ? 'No' : '—');
+  $('holdAlertTxt').className = 'stat-val' + (holdAlert ? ' v-bad' : '');
+}
+
+function testOnAccelWindow(parts){
+  const [, , , sum, loops, ms] = parts;
+  if (holdActive) { hold.g = Math.max(hold.g, sum / G); renderHold(); }
+  if (parts.length >= 6) onWindowStats(loops, ms); //newer firmware appends loop count + window length
+}
+
+function testOnGyroWindow(sum){
+  if (holdActive) { hold.dps = Math.max(hold.dps, sum); renderHold(); }
+}
+
+function testOnAlert(reason, value){
+  if (!holdActive) return;
+  holdAlert = holdAlert ? `${holdAlert} + ${reason}` : reason;
+  if (reason === 'LINEAR') hold.g = Math.max(hold.g, value / G);
+  else hold.dps = Math.max(hold.dps, value);
+  renderHold();
+}
+
+$('btnReady').addEventListener('click', () => {
+  hold = { g: 0, dps: 0 };
+  holdAlert = null;
+  holdActive = true;
+  renderHold();
+  setLine('alertStatus', 'Ready. Drop the helmet, then press Record.', null);
+});
+
+$('btnRecord').addEventListener('click', () => {
+  if (!holdActive) { setLine('alertStatus', 'Press Ready before the drop.', 'bad'); return; }
+  const height = $('alertHeight').value;
+  const gLine = ACCEL_THRESHOLD / G;
+  const should = hold.g > gLine || hold.dps > GYRO_THRESHOLD; //same '>' comparison the firmware uses
+  const did = !!holdAlert;
+  const borderline = Math.abs(hold.g - gLine) / gLine < 0.05 || Math.abs(hold.dps - GYRO_THRESHOLD) / GYRO_THRESHOLD < 0.05;
+  let kind, text;
+  if (did === should) { kind = borderline ? 'warn' : 'ok'; text = borderline ? 'Pass (very close to a threshold)' : 'Pass'; }
+  else { kind = 'bad'; text = should ? 'FAIL: should have alerted' : 'FAIL: alerted under the threshold'; }
+  alertRows.push({ height, g: hold.g, dps: hold.dps, should, did: holdAlert || 'No', kind, text });
+  holdActive = false;
+  renderHold();
+  $('alertBody').innerHTML = alertRows.map((r, i) => `<tr>
+    <td>${i + 1}</td><td>${r.height || '—'}</td><td>${r.g.toFixed(1)}</td><td>${r.dps.toFixed(0)}</td>
+    <td>${r.should ? 'Yes' : 'No'}</td><td>${r.did}</td>${verdictCell(r.text, r.kind)}</tr>`).join('');
+  setLine('alertStatus', did ? 'Recorded. Press Reset alert to resume monitoring before the next drop.' : 'Recorded.', kind);
+});
+
+$('btnTestClear').addEventListener('click', () => sendCommand('clear'));
+
+$('btnAlertCsv').addEventListener('click', () => downloadCSV('alert_drops.csv',
+  ['drop', 'height_cm', 'peak_g', 'peak_dps', 'should_alert', 'did_alert', 'result'],
+  alertRows.map((r, i) => [i + 1, r.height, r.g.toFixed(2), r.dps.toFixed(1), r.should ? 'yes' : 'no', r.did, r.text])));
+
+// ── 5. rotation check ───────────────────────────────────────────────────────
+let rotPending = null;   //true angle entered when the check was armed
+const rotRows = [];
+
+$('btnRotArm').addEventListener('click', () => {
+  const a = parseFloat($('rotAngle').value);
+  if (!(a > 0)) { setLine('rotStatus', 'Enter the angle you will turn it first.', 'bad'); return; }
+  if (!testChar) { setLine('rotStatus', 'Needs the firmware rotation additions.', 'bad'); return; }
+  rotPending = a;
+  setLine('rotStatus', 'Arming…', null);
+  sendCommand('rotarm');
+});
+
+$('btnRotStop').addEventListener('click', () => {
+  setLine('rotStatus', 'Stopping…', null);
+  sendCommand('rotstop');
+});
+
+function onRotation(p){
+  const [ax, ay, az, peak, secs, samples, drift, movSamples, movAx, movAy, movAz, movThresh] = p;
+  if (rotPending === null) return;
+
+  //threshold method (needs the newer firmware fields): only samples above the turning speed count
+  let thr = null;
+  if (p.length >= 12 && movSamples > 0 && secs > 0) {
+    const rate = samples / secs;                        //measured sample rate for this run
+    const turnTime = movSamples / rate;                 //time spent turning = turning samples ÷ sample rate
+    const movAngle = Math.hypot(movAx, movAy, movAz);   //angle the gyro saw while above the threshold
+    const trueAvg = rotPending / turnTime;              //real average speed while turning
+    const gyroAvg = movAngle / turnTime;                //gyro's average speed over the same time
+    thr = { rate, turnTime, movAngle, trueAvg, gyroAvg, pct: 100 * (gyroAvg - trueAvg) / trueAvg, threshold: movThresh };
+  }
+  //the device adds up each axis separately; for a turn around one steady axis, combining them gives the total angle
+  const measured = Math.hypot(ax, ay, az);
+  const trueA = rotPending;
+  const err = measured - trueA;
+  const pct = 100 * err / trueA;
+
+  //lining up by eye is good to about ±3°, so small angles get a fixed allowance and big ones a percentage
+  let kind, text;
+  if (Math.abs(err) <= Math.max(3, 0.02 * trueA))      { kind = 'ok';   text = 'Matches.'; }
+  else if (Math.abs(err) <= Math.max(6, 0.05 * trueA)) { kind = 'warn'; text = 'A little off. Check the alignment and repeat.'; }
+  else                                                 { kind = 'bad'; text =err < 0 ? 'Reads LOW.' : 'Reads HIGH.'; }
+  if (peak >= 1900) { kind = 'bad'; text += ' Peak hit the 2000 °/s limit, so readings may have clipped.'; }
+  if (secs > 20)    { kind = kind === 'ok' ? 'warn' : kind; text += ' Long run: leftover zero drift adds up over time, so keep checks short.'; }
+
+  rotRows.push({ trueA, measured, err, pct, peak, secs, samples, drift, kind, text, thr });
+  renderRotation();
+  drawRotPlot();
+  setLine('rotStatus', `Turn ${rotRows.length} saved: ${measured.toFixed(1)}° measured for ${trueA}°. ${text}`, kind);
+}
+
+function renderRotation(){
+  const sgn = v => (v >= 0 ? '+' : '') + v.toFixed(1);
+  $('rotBody').innerHTML = rotRows.map((r, i) => `<tr>
+    <td>${i + 1}</td><td>${r.trueA}</td><td>${r.measured.toFixed(1)}</td>
+    <td class="v-${r.kind}">${sgn(r.pct)}%</td>
+    <td>${r.thr ? r.thr.turnTime.toFixed(2) : '—'}</td>
+    <td>${r.thr ? r.thr.trueAvg.toFixed(0) : '—'}</td>
+    <td>${r.thr ? r.thr.gyroAvg.toFixed(0) : '—'}</td>
+    <td>${r.thr ? sgn(r.thr.pct) + '%' : '—'}</td>
+    <td>${r.peak.toFixed(0)}</td>
+    ${verdictCell(r.text, r.kind)}</tr>`).join('');
+  //scale = best-fit slope of measured vs true, through zero (1.000 means the gyro reads exactly right)
+  const scale = rotRows.reduce((s, r) => s + r.trueA * r.measured, 0) / rotRows.reduce((s, r) => s + r.trueA * r.trueA, 0);
+  const avgErr = rotRows.reduce((s, r) => s + Math.abs(r.err), 0) / rotRows.length;
+  $('rotScale').textContent = scale.toFixed(3);
+  $('rotErr').textContent = avgErr.toFixed(1);
+  $('rotMax').textContent = Math.max(...rotRows.map(r => r.peak)).toFixed(0);
+  $('rotDrift').textContent = rotRows[rotRows.length - 1].drift.toFixed(2);
+  let caption = `Measured vs true angle · dashed line = perfect gyro · filled dots = whole turn, scale ${scale.toFixed(3)} (${((scale - 1) * 100).toFixed(1)}% from perfect)`;
+  const tr = rotRows.filter(r => r.thr);
+  if (tr.length) {
+    const tScale = tr.reduce((s, r) => s + r.trueA * r.thr.movAngle, 0) / tr.reduce((s, r) => s + r.trueA * r.trueA, 0);
+    caption += ` · hollow dots = threshold (${tr[tr.length - 1].thr.threshold} °/s), scale ${tScale.toFixed(3)} (${((tScale - 1) * 100).toFixed(1)}%)`;
+  }
+  $('rotFitText').textContent = caption;
+}
+
+function drawRotPlot(){
+  const c = prepCanvas($('rotCanvas'));
+  if (!c) return;
+  const { ctx, w, h } = c;
+  const m = { l: 44, r: 12, t: 12, b: 34 };
+  const top = Math.max(360, ...rotRows.map(r => Math.max(r.trueA, r.measured))) * 1.1;
+  const X = v => m.l + v / top * (w - m.l - m.r);
+  const Y = v => m.t + (1 - v / top) * (h - m.t - m.b);
+  drawAxes(ctx, w, h, m, top, top, 'true angle (°)', 'measured (°)');
+
+  //perfect-gyro line
+  ctx.strokeStyle = css('--muted');
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(top), Y(top)); ctx.stroke();
+  ctx.setLineDash([]);
+
+  rotRows.forEach(r => {
+    ctx.fillStyle = css(`--${r.kind === 'ok' ? 'ok' : r.kind === 'warn' ? 'caution' : 'warn'}`);
+    ctx.beginPath(); ctx.arc(X(r.trueA), Y(r.measured), 4, 0, Math.PI * 2); ctx.fill();
+    if (r.thr) {
+      //threshold method as a hollow ring at the angle it saw while "turning"
+      ctx.strokeStyle = css('--caution');
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(X(r.trueA), Y(r.thr.movAngle), 5, 0, Math.PI * 2); ctx.stroke();
+    }
+  });
+}
+
+window.addEventListener('resize', drawRotPlot);
+document.querySelector('.tab[data-panel="test"]').addEventListener('click', drawRotPlot);
+
+$('btnRotCsv').addEventListener('click', () => downloadCSV('rotation_check.csv',
+  ['turn', 'true_deg', 'whole_turn_deg', 'whole_turn_error_deg', 'whole_turn_error_pct',
+   'threshold_dps', 'sample_rate_per_s', 'turning_time_s', 'threshold_angle_deg', 'true_avg_dps', 'gyro_avg_dps', 'threshold_error_pct',
+   'peak_dps', 'run_time_s', 'samples', 'zero_drift_dps', 'result'],
+  rotRows.map((r, i) => [i + 1, r.trueA, r.measured.toFixed(2), r.err.toFixed(2), r.pct.toFixed(2),
+    r.thr ? r.thr.threshold : '', r.thr ? r.thr.rate.toFixed(1) : '', r.thr ? r.thr.turnTime.toFixed(3) : '',
+    r.thr ? r.thr.movAngle.toFixed(2) : '', r.thr ? r.thr.trueAvg.toFixed(1) : '', r.thr ? r.thr.gyroAvg.toFixed(1) : '',
+    r.thr ? r.thr.pct.toFixed(2) : '',
+    r.peak.toFixed(1), r.secs.toFixed(2), r.samples, r.drift.toFixed(3), r.text])));
+</script>
+</body>
+</html>

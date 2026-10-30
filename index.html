@@ -1,0 +1,1470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Helmet Impact Monitor | Oliver Comfort</title>
+<meta name="description" content="A helmet-mounted impact sensor that measures linear acceleration and rotation and alerts over Bluetooth when a hit passes a concussion-research threshold. Designed and built by Oliver Comfort.">
+<link rel="preload" href="fonts/archivo-latin-wdth-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="#overview">Helmet Impact Monitor</a>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#overview">Overview</a>
+      <a href="#build">Build</a>
+      <a href="#guide">Build guide</a>
+      <a href="#decisions">Design decisions</a>
+      <a href="#testing">Testing</a>
+      <a href="#log">Design log</a>
+      <a href="#console">Console</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="tab-panel" id="overview">
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Helmet Impact<br>Monitor</h1>
+      <p class="lede">A sensor I designed and built that mounts on the back of a football helmet. It measures the linear acceleration and rotation of every hit, and sends an alert over Bluetooth when either one passes a threshold from concussion research.</p>
+      <div class="actions">
+        <a class="btn" href="#build">How I built it</a>
+        <a class="btn ghost" href="#testing">Test results</a>
+      </div>
+    </div>
+    <div class="hero-media"><figure class="photo gif">
+  <img src="images/helmet-worn.gif" alt="My brother wearing it at the back of a Schutt F7 helmet">
+  <figcaption>My brother wearing it at the back of a Schutt F7 helmet.</figcaption>
+</figure></div>
+  </div>
+</section>
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Alert thresholds</h2>
+      <p>The device checks linear acceleration and rotation separately, and either one can trigger an alert. Both thresholds are set below the average concussive hit measured in high school and college players.</p>
+    </div>
+    <div class="scales">
+      <div class="scale">
+        <div>
+          <h3>Linear acceleration</h3>
+          <div class="value">80<small>g</small></div>
+          <p>Campolettano et al., 2019</p>
+        </div>
+        <div class="scale-graphic"><svg viewBox="0 0 800 152" role="img" aria-label="Scale from 0 to 140 g: youth concussive average 62 g, alert at 80 g, high school and college concussive average 102 g, my 5 foot drop 136.6 g.">
+<rect class="band-safe" x="20" y="62" width="434.3" height="14" rx="2"/>
+<rect class="band-alert" x="454.3" y="62" width="325.7" height="14" rx="2"/>
+<line class="tick" x1="20.0" y1="78" x2="20.0" y2="84"/>
+<text class="tick-label" x="20.0" y="100" text-anchor="middle">0</text>
+<line class="tick" x1="128.6" y1="78" x2="128.6" y2="84"/>
+<text class="tick-label" x="128.6" y="100" text-anchor="middle">20</text>
+<line class="tick" x1="237.1" y1="78" x2="237.1" y2="84"/>
+<text class="tick-label" x="237.1" y="100" text-anchor="middle">40</text>
+<line class="tick" x1="345.7" y1="78" x2="345.7" y2="84"/>
+<text class="tick-label" x="345.7" y="100" text-anchor="middle">60</text>
+<line class="tick" x1="454.3" y1="78" x2="454.3" y2="84"/>
+<text class="tick-label" x="454.3" y="100" text-anchor="middle">80</text>
+<line class="tick" x1="562.9" y1="78" x2="562.9" y2="84"/>
+<text class="tick-label" x="562.9" y="100" text-anchor="middle">100</text>
+<line class="tick" x1="671.4" y1="78" x2="671.4" y2="84"/>
+<text class="tick-label" x="671.4" y="100" text-anchor="middle">120</text>
+<line class="tick" x1="780.0" y1="78" x2="780.0" y2="84"/>
+<text class="tick-label" x="780.0" y="100" text-anchor="end">140 g</text>
+<line class="marker" x1="356.6" y1="36" x2="356.6" y2="76"/>
+<text class="marker-label" x="362.6" y="20" text-anchor="start">Youth average</text>
+<text class="marker-sub" x="362.6" y="34" text-anchor="start">62 g</text>
+<line class="marker" x1="573.7" y1="36" x2="573.7" y2="76"/>
+<text class="marker-label" x="579.7" y="20" text-anchor="start">High school and college average</text>
+<text class="marker-sub" x="579.7" y="34" text-anchor="start">102 g</text>
+<line class="marker" x1="738.7" y1="62" x2="738.7" y2="146"/>
+<text class="marker-label" x="732.7" y="128" text-anchor="end">My 152 cm drops</text>
+<text class="marker-sub" x="732.7" y="142" text-anchor="end">132 g average</text>
+<line class="thresh" x1="454.3" y1="44" x2="454.3" y2="84"/>
+<text class="thresh-label" x="448.3" y="52" text-anchor="end">Alert</text>
+</svg></div>
+      </div>
+      <div class="scale">
+        <div>
+          <h3>Rotational velocity</h3>
+          <div class="value">1000<small>°/s</small></div>
+          <p>Rowson et al., 2012</p>
+        </div>
+        <div class="scale-graphic"><svg viewBox="0 0 800 152" role="img" aria-label="Scale from 0 to 1800 degrees per second: routine hit average 315, alert at 1000, concussive average 1278, 50 percent concussion risk 1621.">
+<rect class="band-safe" x="20" y="62" width="422.2" height="14" rx="2"/>
+<rect class="band-alert" x="442.2" y="62" width="337.8" height="14" rx="2"/>
+<line class="tick" x1="20.0" y1="78" x2="20.0" y2="84"/>
+<text class="tick-label" x="20.0" y="100" text-anchor="middle">0</text>
+<line class="tick" x1="146.7" y1="78" x2="146.7" y2="84"/>
+<text class="tick-label" x="146.7" y="100" text-anchor="middle">300</text>
+<line class="tick" x1="273.3" y1="78" x2="273.3" y2="84"/>
+<text class="tick-label" x="273.3" y="100" text-anchor="middle">600</text>
+<line class="tick" x1="400.0" y1="78" x2="400.0" y2="84"/>
+<text class="tick-label" x="400.0" y="100" text-anchor="middle">900</text>
+<line class="tick" x1="526.7" y1="78" x2="526.7" y2="84"/>
+<text class="tick-label" x="526.7" y="100" text-anchor="middle">1200</text>
+<line class="tick" x1="653.3" y1="78" x2="653.3" y2="84"/>
+<text class="tick-label" x="653.3" y="100" text-anchor="middle">1500</text>
+<line class="tick" x1="780.0" y1="78" x2="780.0" y2="84"/>
+<text class="tick-label" x="780.0" y="100" text-anchor="end">1800 °/s</text>
+<line class="marker" x1="153.0" y1="36" x2="153.0" y2="76"/>
+<text class="marker-label" x="159.0" y="20" text-anchor="start">Routine hit average</text>
+<text class="marker-sub" x="159.0" y="34" text-anchor="start">315 °/s</text>
+<line class="marker" x1="559.6" y1="36" x2="559.6" y2="76"/>
+<text class="marker-label" x="565.6" y="20" text-anchor="start">Concussive average</text>
+<text class="marker-sub" x="565.6" y="34" text-anchor="start">1278 °/s</text>
+<line class="marker" x1="704.4" y1="62" x2="704.4" y2="146"/>
+<text class="marker-label" x="698.4" y="128" text-anchor="end">50% concussion risk</text>
+<text class="marker-sub" x="698.4" y="142" text-anchor="end">1621 °/s</text>
+<line class="thresh" x1="442.2" y1="44" x2="442.2" y2="84"/>
+<text class="thresh-label" x="436.2" y="52" text-anchor="end">Alert</text>
+</svg></div>
+      </div>
+    </div>
+    <p class="scale-foot">Shaded red is the alert zone. Averages are for concussive hits measured in football players.</p>
+
+
+  </div>
+</section>
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>How it works</h2>
+      <p>All of the detection runs on the ESP32. The console only displays the readings and alerts it sends.</p>
+    </div>
+    <ol class="pipeline">
+      <li><h3>Impact</h3><p>The device sits at the nape, the part of the head least likely to be hit directly.</p></li>
+      <li><h3>Two sensors</h3><p>An ADXL375 reads linear acceleration up to 200 g. An ISM330DHCX reads rotational velocity.</p></li>
+      <li><h3>Peak window</h3><p>The ESP32 keeps the strongest reading in each 50 ms window, and only that peak is reported and checked.</p></li>
+      <li><h3>Threshold check</h3><p>Gravity is removed, then each peak is compared to its own threshold.</p></li>
+      <li><h3>Alert</h3><p>The LEDs light and a Bluetooth alert goes to the console. It stays on until someone clears it.</p></li>
+    </ol>
+
+    <div class="inside">
+      <div>
+        <h3>Inside the enclosure</h3>
+        <p>Everything sits in a two-part printed box. The board and battery stack in the upper half, the two sensors sit on their own pads in the lower half, and one LED is set into each side wall.</p>
+      </div>
+      <div class="pair">
+<figure class="photo">
+  <img src="images/enclosure-usb-side.jpg" alt="The finished enclosure, in white PETG: the USB port and one LED" loading="lazy">
+  <figcaption>The finished enclosure, in white PETG: the USB port and one LED.</figcaption>
+</figure>
+<figure class="photo">
+  <img src="images/enclosure-inside-lit.jpg" alt="Powered on before the lid goes on. The green lights are the sensors' power indicators" loading="lazy">
+  <figcaption>Powered on before the lid goes on. The green lights are the sensors' power indicators.</figcaption>
+</figure>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>What's next</h2>
+    </div>
+    <ul class="next-list">
+      <li>Deep sleep mode while charging</li>
+      <li>Sharp-turn tests of the rotation alert at 1000 °/s</li>
+      <li>A reprint of the enclosure in a stronger orientation</li>
+      <li>Drop tests on a harder surface than grass</li>
+    </ul>
+  </div>
+</section>
+</div>
+
+<div class="tab-panel" id="build" hidden>
+<div class="wrap">
+  <div class="tab-hero">
+    <h1>Build</h1>
+    <p>Photos from the first breadboard to the finished device. The step-by-step instructions for making one are in the <a href="#guide">Build guide</a>.</p>
+  </div>
+
+  <section class="build-step">
+    <div class="build-head">
+      <span class="step-num">1</span>
+      <div>
+        <h2>Prototyping and learning to solder</h2>
+        <p>Phase 1 ran on one MPU-6050 wired to the laptop. Phase 2 moved to the two high-range sensors and then to battery power. When the Phase 2 sensors wouldn't connect through loose header pins, I learned to solder so I could wire them directly.</p>
+      </div>
+    </div>
+    <div class="gallery">
+      <figure class="photo">
+  <img src="images/phase1-breadboard.jpg" alt="Phase 1: an MPU-6050 and an LED on a breadboard, powered over USB" loading="lazy">
+  <figcaption>Phase 1: an MPU-6050 and an LED on a breadboard, powered over USB.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/phase1-on-battery.jpg" alt="Phase 1 on battery. The LiPo plugs straight into the board, which also charges it" loading="lazy">
+  <figcaption>Phase 1 on battery. The LiPo plugs straight into the board, which also charges it.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/phase2-breadboard.jpg" alt="Phase 2: the ADXL375 (purple) and ISM330DHCX (black) on their own breadboard" loading="lazy">
+  <figcaption>Phase 2: the ADXL375 (purple) and ISM330DHCX (black) on their own breadboard.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/phase2-breadboard-usb.jpg" alt="Phase 2 running over USB" loading="lazy">
+  <figcaption>Phase 2 running over USB.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/phase2-breadboard-battery.jpg" alt="Phase 2 running on battery" loading="lazy">
+  <figcaption>Phase 2 running on battery.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/soldering-practice-weevil.jpg" alt="My first soldering practice, on a SparkFun WeevilEye kit" loading="lazy">
+  <figcaption>My first soldering practice, on a SparkFun WeevilEye kit.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/joint-twisted-early.jpg" alt="An early practice joint: wire ends twisted together before soldering" loading="lazy">
+  <figcaption>An early practice joint: wire ends twisted together before soldering.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/joint-mid-wire-splice.jpg" alt="Practicing the mid-wire splice I ended up using: one wire's end soldered onto another's stripped middle" loading="lazy">
+  <figcaption>Practicing the mid-wire splice I ended up using: one wire's end soldered onto another's stripped middle.</figcaption>
+</figure>
+    </div>
+  </section>
+
+  <section class="build-step">
+    <div class="build-head">
+      <span class="step-num">2</span>
+      <div>
+        <h2>Printing the enclosure</h2>
+        <p>Every part was designed in Onshape and printed in white PETG on a Bambu Lab P2S with a 0.4 mm nozzle. The two enclosures in this section are prototypes; the final version is in the Build guide.</p>
+      </div>
+    </div>
+    <div class="gallery">
+      <figure class="photo">
+  <img src="images/printing-base-and-pads.jpg" alt="Printing parts during the stretch when prints kept breaking, before I fixed the supports and first layer" loading="lazy">
+  <figcaption>Printing parts during the stretch when prints kept breaking, before I fixed the supports and first layer.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/enclosure-first-version.jpg" alt="Prototype enclosure: an early bottom with a tall dividing wall and a test screw" loading="lazy">
+  <figcaption>Prototype enclosure: an early bottom with a tall dividing wall and a test screw.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/battery-in-enclosure.jpg" alt="Prototype enclosure: the battery held by its guardrails, with the sensor pads below" loading="lazy">
+  <figcaption>Prototype enclosure: the battery held by its guardrails, with the sensor pads below.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/screws-and-failures.jpg" alt="Four working printed screws, and the failed prints it took to get there" loading="lazy">
+  <figcaption>Four working printed screws, and the failed prints it took to get there.</figcaption>
+</figure>
+    </div>
+  </section>
+
+  <section class="build-step">
+    <div class="build-head">
+      <span class="step-num">3</span>
+      <div>
+        <h2>Wiring the sensors</h2>
+        <p>Both sensors share the same data, clock, power and ground wires, so I planned the wiring on paper first, then soldered wires straight to the sensors' pads.</p>
+      </div>
+    </div>
+    <div class="gallery">
+      <figure class="photo">
+  <img src="images/wiring-plan-sketch.jpg" alt="My wiring plan, color-coded for pin 21, SCL, SDA, 3V and ground" loading="lazy">
+  <figcaption>My wiring plan, color-coded for pin 21, SCL, SDA, 3V and ground.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/sensors-ground-power-splices.jpg" alt="Ground and power spliced between the two sensors" loading="lazy">
+  <figcaption>Ground and power spliced between the two sensors.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/sensors-harness-wired.jpg" alt="The sensors partway through wiring" loading="lazy">
+  <figcaption>The sensors partway through wiring.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/sensors-harness-early.jpg" alt="Both sensors wired, with the shared lines joined" loading="lazy">
+  <figcaption>Both sensors wired, with the shared lines joined.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/sensors-undersides.jpg" alt="The undersides: wires soldered straight to the pads, no headers" loading="lazy">
+  <figcaption>The undersides: wires soldered straight to the pads, no headers.</figcaption>
+</figure>
+    </div>
+  </section>
+</div>
+</div>
+
+<div class="tab-panel" id="guide" hidden>
+<div class="wrap">
+  <div class="tab-hero">
+    <h1>Build guide</h1>
+    <p>How to make one. The code and print files will be on GitHub.</p>
+    <div class="cad-link"><a class="btn ghost" href="https://cad.onshape.com/documents/ed99d0b06df9e477665971e0/w/3d3a22881dab07a6218cb837/e/45c9494ef317be60c1e28623" target="_blank" rel="noopener">View the CAD in Onshape</a></div>
+  </div>
+
+  <section class="materials" aria-labelledby="mat-h">
+    <h2 id="mat-h">Materials</h2>
+    <div class="mat-grid">
+      <div>
+        <h3>Electronics</h3>
+        <ul>
+          <li>Adafruit HUZZAH32 (ESP32 Feather)</li>
+          <li>Adafruit ADXL375 accelerometer, ±200 g</li>
+          <li>Adafruit ISM330DHCX gyroscope</li>
+          <li>3.7 V 1200 mAh LiPo battery with JST plug</li>
+          <li>2 red LEDs with built-in resistors</li>
+          <li>22 AWG stranded hookup wire</li>
+          <li>Heat-shrink tubing</li>
+          <li>Micro-USB cable</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Printed parts</h3>
+        <ul>
+          <li>Enclosure bottom</li>
+          <li>Enclosure top</li>
+          <li>4 screws</li>
+          <li>Stack shield</li>
+          <li>Curved helmet base</li>
+          <li>Locking pin</li>
+        </ul>
+        <h3>Print materials</h3>
+        <ul>
+          <li>White PETG for every part</li>
+          <li>PLA for the support layers that touch the parts</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Assembly</h3>
+        <ul>
+          <li>3M VHB double-sided tape</li>
+          <li>Isopropyl alcohol</li>
+          <li>A football helmet (mine is a Schutt F7; the base's curve is measured from it)</li>
+        </ul>
+        <h3>Software</h3>
+        <ul>
+          <li>Arduino IDE with the ESP32 board package and CP210x USB driver</li>
+          <li>Libraries: Adafruit ADXL375, Adafruit LSM6DS, Adafruit Unified Sensor, NimBLE-Arduino</li>
+          <li>Onshape and Bambu Studio</li>
+          <li>Chrome on a computer or Android phone for the console</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Tools</h3>
+        <ul>
+          <li>Bambu Lab P2S with AMS, 0.4 mm nozzle</li>
+          <li>YIHUA 939D+ soldering station</li>
+          <li>Lead-free rosin-core solder</li>
+          <li>Flux pen, solder wick and solder vacuum</li>
+          <li>Silicone work mat</li>
+          <li>Heat gun</li>
+          <li>Craft knife</li>
+          <li>Multimeter</li>
+          <li>Digital calipers</li>
+          <li>Pliers</li>
+          <li>Straight edge and ruler, for measuring the helmet's curve</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="build-step">
+    <div class="build-head">
+      <span class="step-num">1</span>
+      <div>
+        <h2>Print the parts</h2>
+        <ul class="howto">
+          <li>Print everything in white PETG with the 0.4 mm nozzle and 4 to 6 wall loops.</li>
+          <li>Set the support layers that touch each part to PLA so they don't fuse to the PETG, and orient parts so the faces that have to fit need no supports.</li>
+          <li>Print the screws head-first at 0.1 mm layers, with a slow 0.25 mm first layer, a brim and slower cooling so they don't get knocked over.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="gallery">
+      <figure class="photo cad">
+  <img src="images/cad-enclosure-bottom.png" alt="CAD view: Enclosure bottom" loading="lazy">
+  <figcaption>CAD: Enclosure bottom</figcaption>
+</figure>
+      <figure class="photo cad">
+  <img src="images/cad-enclosure-top.png" alt="CAD view: Enclosure top" loading="lazy">
+  <figcaption>CAD: Enclosure top</figcaption>
+</figure>
+      <figure class="photo cad">
+  <img src="images/cad-screw.png" alt="CAD view: Screw" loading="lazy">
+  <figcaption>CAD: Screw</figcaption>
+</figure>
+      <figure class="photo cad">
+  <img src="images/cad-stack-shield.png" alt="CAD view: Stack shield" loading="lazy">
+  <figcaption>CAD: Stack shield</figcaption>
+</figure>
+      <figure class="photo cad">
+  <img src="images/cad-base.png" alt="CAD view: Curved base" loading="lazy">
+  <figcaption>CAD: Curved base</figcaption>
+</figure>
+      <figure class="photo cad">
+  <img src="images/cad-pin.png" alt="CAD view: Locking pin" loading="lazy">
+  <figcaption>CAD: Locking pin</figcaption>
+</figure>
+    </div>
+  </section>
+
+  <section class="build-step">
+    <div class="build-head">
+      <span class="step-num">2</span>
+      <div>
+        <h2>Solder the harness</h2>
+        <ul class="howto">
+          <li>Solder everything as one harness before anything goes in the box.</li>
+          <li>Both sensors share four lines: SDA to pin 23, SCL to pin 22, 3V and ground. Each LED gets its own pin.</li>
+          <li>For each shared line, strip the middle of one wire with a craft knife and solder the second wire's end onto it. It makes a slimmer, shorter joint than twisting ends together.</li>
+          <li>Ground needs four wires into one pin: one splice like the others, plus a joint between the stripped middles of two wires.</li>
+          <li>Lay each LED leg parallel to its wire and solder it, with heat shrink on one leg so the legs can't short.</li>
+          <li>Heat-shrink every joint, and check each one with the multimeter.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="gallery">
+      <figure class="photo">
+  <img src="images/harness-complete.jpg" alt="The finished harness: board, both sensors and both LEDs" loading="lazy">
+  <figcaption>The finished harness: board, both sensors and both LEDs.</figcaption>
+</figure>
+    </div>
+  </section>
+
+  <section class="build-step">
+    <div class="build-head">
+      <span class="step-num">3</span>
+      <div>
+        <h2>Build the battery stack</h2>
+        <ul class="howto">
+          <li>Put VHB tape on the battery.</li>
+          <li>Press the stack shield onto it. The shield keeps the board's soldered pins off the battery's foil, and its raised section meets the board's flat underside so the tape can grip.</li>
+          <li>Tape the top of the shield and press the board onto it.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="gallery">
+      <figure class="photo">
+  <img src="images/battery-vhb.jpg" alt="VHB tape on the battery" loading="lazy">
+  <figcaption>VHB tape on the battery.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/shield-raised-section.jpg" alt="The shield on the battery, raised section up" loading="lazy">
+  <figcaption>The shield on the battery, raised section up.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/shield-raised-section-2.jpg" alt="The raised section from the side" loading="lazy">
+  <figcaption>The raised section from the side.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/shield-with-vhb.jpg" alt="Tape on the raised section, ready for the board" loading="lazy">
+  <figcaption>Tape on the raised section, ready for the board.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/harness-on-shield-desk.jpg" alt="The board pressed onto the stack" loading="lazy">
+  <figcaption>The board pressed onto the stack.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/harness-on-shield-striped.jpg" alt="The whole harness with the stack finished" loading="lazy">
+  <figcaption>The whole harness with the stack finished.</figcaption>
+</figure>
+    </div>
+  </section>
+
+  <section class="build-step">
+    <div class="build-head">
+      <span class="step-num">4</span>
+      <div>
+        <h2>Tape the sensors and battery</h2>
+        <ul class="howto">
+          <li>Put VHB on the underside of each sensor and on the bottom of the battery.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="gallery">
+      <figure class="photo">
+  <img src="images/stack-and-sensors-vhb.jpg" alt="Tape on the sensors and the bottom of the battery" loading="lazy">
+  <figcaption>Tape on the sensors and the bottom of the battery.</figcaption>
+</figure>
+    </div>
+  </section>
+
+  <section class="build-step">
+    <div class="build-head">
+      <span class="step-num">5</span>
+      <div>
+        <h2>Place everything in the enclosure</h2>
+        <ul class="howto">
+          <li>Plug the battery into the board's JST port before final placement. Once the stack is taped in, the connector is hard to reach.</li>
+          <li>Push the LEDs into their side-wall holes first, since their wires bend most easily. The holes hold them without glue.</li>
+          <li>Set the stack between the battery guardrails with the USB port lined up with its hole.</li>
+          <li>Press each sensor onto its pad so the alignment pins go through its mounting holes.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="gallery">
+      <figure class="photo">
+  <img src="images/enclosure-inside.jpg" alt="Everything in place before the lid" loading="lazy">
+  <figcaption>Everything in place before the lid.</figcaption>
+</figure>
+    </div>
+  </section>
+
+  <section class="build-step">
+    <div class="build-head">
+      <span class="step-num">6</span>
+      <div>
+        <h2>Close the lid</h2>
+        <ul class="howto">
+          <li>Line up the lid's two grooves with the bottom, then thread in the four printed screws.</li>
+          <li>Finish tightening with pliers.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="gallery">
+      <figure class="photo">
+  <img src="images/enclosure-lid.jpg" alt="The lid and its four screws" loading="lazy">
+  <figcaption>The lid and its four screws.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/enclosure-led-corner.jpg" alt="The closed enclosure, with an LED in the side wall" loading="lazy">
+  <figcaption>The closed enclosure, with an LED in the side wall.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/enclosure-led-side.jpg" alt="The LED on the opposite side" loading="lazy">
+  <figcaption>The LED on the opposite side.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/enclosure-side-plain.jpg" alt="The closed enclosure" loading="lazy">
+  <figcaption>The closed enclosure.</figcaption>
+</figure>
+    </div>
+  </section>
+
+  <section class="build-step">
+    <div class="build-head">
+      <span class="step-num">7</span>
+      <div>
+        <h2>Bond the base to the helmet</h2>
+        <ul class="howto">
+          <li>Clean the nape of the helmet with isopropyl alcohol.</li>
+          <li>Cover the base's curved underside with VHB and press it on. It can be removed later with isopropyl alcohol, so the helmet doesn't need to be drilled.</li>
+          <li>To fit a different helmet, measure the shell's curve in two directions with a straight edge and update the base's saddle surface.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="gallery">
+      <figure class="photo">
+  <img src="images/base-underside-vhb.jpg" alt="VHB on the base's curved underside" loading="lazy">
+  <figcaption>VHB on the base's curved underside.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/base-on-helmet.jpg" alt="The base bonded at the nape" loading="lazy">
+  <figcaption>The base bonded at the nape.</figcaption>
+</figure>
+    </div>
+  </section>
+
+  <section class="build-step">
+    <div class="build-head">
+      <span class="step-num">8</span>
+      <div>
+        <h2>Slide on the device and pin it</h2>
+        <ul class="howto">
+          <li>Slide the enclosure's dovetail onto the base.</li>
+          <li>Push the straight pin into its hole. Friction holds the pin, and the dovetail keeps the enclosure from moving any other way.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="gallery">
+      <figure class="photo">
+  <img src="images/device-mounted.jpg" alt="Slid onto the base and pinned on the helmet" loading="lazy">
+  <figcaption>Slid onto the base and pinned on the helmet.</figcaption>
+</figure>
+    </div>
+  </section>
+
+  <section class="build-step">
+    <div class="build-head">
+      <span class="step-num">9</span>
+      <div>
+        <h2>Load the firmware and connect</h2>
+        <ul class="howto">
+          <li>Install the libraries above, select the HUZZAH32 in Arduino IDE and upload the sketch over USB.</li>
+          <li>Keep the device still when it powers on. It calibrates both sensors in the first 2 seconds.</li>
+          <li>Open the console in Chrome or Edge, press Connect and choose the device, then press Start.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+</div>
+
+<div class="tab-panel" id="decisions" hidden>
+<section class="section first">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Design decisions</h2>
+      <p>Ten entries from the design log. Crossed-out options are ones I tried or considered and ruled out.</p>
+    </div>
+
+    <div class="ledger">
+
+      <article class="entry">
+        <div>
+          <div class="when">June 2026</div>
+          <h3>Adding a gyroscope</h3>
+          <p class="problem">My first plan only measured linear acceleration, but most concussive brain injury comes from rotation.</p>
+        </div>
+        <div>
+          <p class="trail-label">What I went through</p>
+          <ul class="trail">
+            <li class="out">Linear only</li>
+            <li class="out">Prototype gyro, ±2000 °/s</li>
+            <li class="chosen">Second sensor: ISM330DHCX</li>
+          </ul>
+          <p class="why">The high-g sensor I'd bought had no gyroscope, so I added a second one on the same two data wires. I trigger on rotational velocity because it has published injury thresholds. Rotational acceleration would have to be calculated from it, which adds noise.</p>
+        </div>
+      </article>
+
+      <article class="entry">
+        <div>
+          <div class="when">June 2026</div>
+          <h3>Choosing the accelerometer</h3>
+          <p class="problem">I compared the ±400 g H3LIS331 with the ±200 g ADXL375.</p>
+        </div>
+        <div>
+          <ul class="trail">
+            <li class="out">H3LIS331, ±400 g</li>
+            <li class="chosen">ADXL375, ±200 g</li>
+          </ul>
+          <p class="why">Big football hits run 50 to 100 g and extreme outliers 150 to 180 g, so 200 g is enough. A 400 g range spreads the same resolution over twice the range, so readings are coarser. The ADXL375 can also sample up to 3200 times per second, compared with 1000.</p>
+        </div>
+      </article>
+
+      <article class="entry">
+        <div>
+          <div class="when">August 2026</div>
+          <h3>False readings from rotation</h3>
+          <p class="problem">Turning the board in the air, with no impact at all, produced a false linear spike.</p>
+          <div class="mini" aria-label="A 282 degrees per second turn produced a false 124.7 meters per second squared reading">
+            <div><b>282 °/s</b><span>a gentle turn</span></div>
+            <div><b class="bad">124.7 m/s²</b><span>false reading</span></div>
+          </div>
+        </div>
+        <div>
+          <ul class="trail">
+            <li class="out">Gravity removed axis by axis</li>
+            <li class="chosen">Total compared to 9.81 m/s²</li>
+          </ul>
+          <p class="why">My code tracked gravity on each axis with a slow-moving estimate. When the sensor rotated, gravity swung across the axes faster than the estimate followed. Gravity's total size never changes with orientation, so comparing the total fixed it.</p>
+        </div>
+      </article>
+
+      <article class="entry">
+        <div>
+          <div class="when">June 2026</div>
+          <h3>Turning the device off</h3>
+          <p class="problem">The device needs a way to turn off, but the battery charges through the board.</p>
+        </div>
+        <div>
+          <ul class="trail">
+            <li class="out">Push button</li>
+            <li class="out">Slide switch</li>
+            <li class="chosen">Deep sleep while charging</li>
+          </ul>
+          <p class="why">A button needs code to run, so it could turn the device off but never back on. Any switch between battery and board would also cut charging. The board's charger runs independently of the processor, so the battery will still charge while the ESP32 sleeps. Deep sleep is the next thing I'm adding; until then the board runs whenever the battery is connected.</p>
+        </div>
+      </article>
+
+      <article class="entry">
+        <div>
+          <div class="when">September 2026</div>
+          <h3>Mounting the sensors</h3>
+          <p class="problem">I first planned to set the parts in foam, but I was worried about static and heat building up inside the box.</p>
+        </div>
+        <div>
+          <ul class="trail">
+            <li class="out">Foam</li>
+            <li class="out">Tiny printed screws</li>
+            <li class="out">Epoxy</li>
+            <li class="chosen">Alignment pins + VHB tape</li>
+          </ul>
+          <p class="why">The screws were finer than a 0.4 mm nozzle can print. Instead, pins on each pad pass through the sensor's mounting holes, relief cuts make room for its soldered pins, and VHB tape gives full contact. Since the pins hold the sensors in place, I didn't need epoxy.</p>
+        </div>
+      </article>
+
+      <article class="entry">
+        <div>
+          <div class="when">September 2026</div>
+          <h3>Attaching to the helmet</h3>
+          <p class="problem">The mount has to be rigid for clean data and removable for charging, without blocking vents or drilling the shell.</p>
+        </div>
+        <div>
+          <ul class="trail">
+            <li class="out">Straps</li>
+            <li class="out">Magnets</li>
+            <li class="out">Velcro</li>
+            <li class="out">Snap clip</li>
+            <li class="out">Twist-lock pin</li>
+            <li class="chosen">Dovetail + friction pin</li>
+          </ul>
+          <p class="why">Straps block vents, magnets risk the electronics, Velcro is too springy for clean data, and a clip wears out. My twist-lock pin couldn't print accurately. A straight pin held by friction worked. To fit the curved shell, I measured its curve in two directions, checked it with printed tracers, and swept one curve along the other.</p>
+        </div>
+      </article>
+
+      <article class="entry">
+        <div>
+          <div class="when">September 2026</div>
+          <h3>Printed screws</h3>
+          <p class="problem">I wanted every part printable, including the screws. Onshape's thread tool only makes standard threads.</p>
+        </div>
+        <div>
+          <ul class="trail">
+            <li class="out">Built-in thread tool</li>
+            <li class="out">1 mm pitch</li>
+            <li class="out">Printed hex key</li>
+            <li class="chosen">Custom 1.5 mm thread</li>
+          </ul>
+          <p class="why">I built threads with a helix and sweep, widened the pitch when fine threads bent, and chamfered screw and hole so they'd start. In PETG the nozzle kept knocking screws over until a thicker, slower first layer, Arachne walls, a brim and slower cooling fixed it. The printed hex key couldn't handle enough torque, so I switched to pliers.</p>
+        </div>
+      </article>
+
+      <article class="entry has-chart">
+        <div>
+          <div class="when">September 2026</div>
+          <h3>Enclosure color</h3>
+          <p class="problem">Black PETG looks better, but I worried it would heat the battery in the sun.</p>
+        </div>
+        <div>
+          <ul class="trail">
+            <li class="out">Black PETG</li>
+            <li class="chosen">White PETG</li>
+          </ul>
+          <p class="why">I left thin samples of each in direct sun, with the air at about 24 °C. After 10 minutes, black was about 33 °C above the air and white about 9 °C. I went with white.</p>
+        </div>
+        <figure class="chart"><svg viewBox="0 0 520 260" role="img" aria-label="Temperature above air in direct sun: black PETG rose 21 degrees by 5 minutes and 33 by 10; white rose 6 and 9." font-family="Archivo, Helvetica Neue, Arial, sans-serif"><line x1="46" y1="220.0" x2="410" y2="220.0" stroke="#e3e8e4"/><text x="38.0" y="224.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">+0</text><line x1="46" y1="171.0" x2="410" y2="171.0" stroke="#e3e8e4"/><text x="38.0" y="175.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">+10</text><line x1="46" y1="122.0" x2="410" y2="122.0" stroke="#e3e8e4"/><text x="38.0" y="126.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">+20</text><line x1="46" y1="73.0" x2="410" y2="73.0" stroke="#e3e8e4"/><text x="38.0" y="77.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">+30</text><line x1="46" y1="24.0" x2="410" y2="24.0" stroke="#e3e8e4"/><text x="38.0" y="28.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">+40</text><text x="46.0" y="240.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">0 min</text><text x="228.0" y="240.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">5 min</text><text x="410.0" y="240.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">10 min</text><text x="38.0" y="18.0" font-size="11.5" fill="#5a6670" text-anchor="start" font-weight="400">°C above air</text><polyline points="46.0,220.0 228.0,117.1 410.0,58.3" fill="none" stroke="#c47f0e" stroke-width="2" stroke-linejoin="round"/><g class="mark"><circle cx="46.0" cy="220.0" r="4.5" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.5"/><title>Black PETG, 0 min: +0 °C</title></g><g class="mark"><circle cx="228.0" cy="117.1" r="4.5" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.5"/><title>Black PETG, 5 min: +21 °C</title></g><g class="mark"><circle cx="410.0" cy="58.3" r="4.5" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.5"/><title>Black PETG, 10 min: +33 °C</title></g><text x="420.0" y="62.3" font-size="12.5" fill="#1e2a33" text-anchor="start" font-weight="600">Black +33</text><polyline points="46.0,220.0 228.0,190.6 410.0,175.9" fill="none" stroke="#1f73a3" stroke-width="2" stroke-linejoin="round"/><g class="mark"><circle cx="46.0" cy="220.0" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>White PETG, 0 min: +0 °C</title></g><g class="mark"><circle cx="228.0" cy="190.6" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>White PETG, 5 min: +6 °C</title></g><g class="mark"><circle cx="410.0" cy="175.9" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>White PETG, 10 min: +9 °C</title></g><text x="420.0" y="179.9" font-size="12.5" fill="#1e2a33" text-anchor="start" font-weight="600">White +9</text></svg><figcaption>Temperature above the air, in direct sun.</figcaption></figure>
+      </article>
+
+      <article class="entry">
+        <div>
+          <div class="when">October 2026</div>
+          <h3>Alert thresholds</h3>
+          <p class="problem">I first looked at youth-league research, which pointed to 60 g, but the device is meant for high school players.</p>
+        </div>
+        <div>
+          <ul class="trail">
+            <li class="out">15 m/s² bench value</li>
+            <li class="out">1500 °/s</li>
+            <li class="out">60 g</li>
+            <li class="chosen">80 g and 1000 °/s</li>
+          </ul>
+          <p class="why">1500 °/s was close to the 50% concussion risk level, which is too late for an alert. 60 g was based on younger players. High school players take many more hard hits, and an alert that fires every few plays teaches coaches to ignore it.</p>
+        </div>
+      </article>
+
+      <article class="entry">
+        <div>
+          <div class="when">August 2026</div>
+          <h3>Soldering shared wires</h3>
+          <p class="problem">Both sensors share their data, power and ground wires, and four wires meet at one ground pin, inside a very small box.</p>
+        </div>
+        <div>
+          <ul class="trail">
+            <li class="out">Three ends twisted together</li>
+            <li class="out">Five ends on one joint</li>
+            <li class="chosen">Mid-wire splice</li>
+          </ul>
+          <p class="why">Twisted joints were too bulky to fit heat shrink well. Instead, I strip the middle of one wire with a knife and solder the second wire's end to it, which makes a smaller joint that can still bend. Every joint has heat shrink.</p>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+</div>
+
+<div class="tab-panel" id="testing" hidden>
+<section class="section first">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Sensor and alert tests</h2>
+      <p>Tests 1, 2, 3 and 5 compare the sensors to something measured independently: gravity, a clock, a drop height or a marked angle. Test 4 checks that the alert fires when it should. All tests were run from October 19 to 29, and the graphs and tables include every drop and turn I recorded.</p>
+    </div>
+
+    <div class="results" role="list">
+      <div class="result-cell" role="listitem"><b>19 / 19</b><span>accuracy drops matched the physics (impulse ratio 1.23 ± 0.11)</span></div>
+      <div class="result-cell" role="listitem"><b>25 / 25</b><span>alert drops made the right call: 12 of 12 above 80 g alerted, 0 of 13 below</span></div>
+      <div class="result-cell" role="listitem"><b>0.989</b><span>gyroscope scale factor over 20 measured turns (1.000 is perfect)</span></div>
+      <div class="result-cell" role="listitem"><b>270 → 705</b><span>readings per second after I fixed a slow data bus</span></div>
+    </div>
+
+    <div class="gallery setups">
+      <figure class="photo video">
+  <video src="video/drop-test.mp4" poster="video/drop-test-poster.jpg" autoplay muted loop playsinline aria-label="A drop onto grass, at half speed"></video>
+  <figcaption>A drop onto grass, at half speed.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/drop-height-122cm.jpg" alt="Measuring the 122 cm (48 in) drop height" loading="lazy">
+  <figcaption>Measuring the 122 cm (48 in) drop height.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/drop-height-152cm.jpg" alt="Measuring the 152 cm (60 in) drop height" loading="lazy">
+  <figcaption>Measuring the 152 cm (60 in) drop height.</figcaption>
+</figure>
+      <figure class="photo">
+  <img src="images/rotation-angle-sheet.jpg" alt="The angle sheet for the rotation trials" loading="lazy">
+  <figcaption>The angle sheet for the rotation trials.</figcaption>
+</figure>
+    </div>
+
+    <div class="test-block">
+      <div class="test-text">
+        <h3>1. Gravity check</h3>
+        <p>At rest, the accelerometer has to read 1 g, about 9.81 m/s², on whichever face points down. I checked all six faces, so every axis is tested in both directions.</p>
+        <p class="verdict"><strong>Passed</strong> on all six faces.</p>
+      </div>
+    </div>
+
+    <div class="test-block">
+      <div class="test-text">
+        <h3>2. Sample rate</h3>
+        <p>A hard hit can rise and fall in a few milliseconds, so if the code reads too slowly the true peak can fall between readings. The main loop was only reaching 270 readings per second, below the accelerometer's 800, because the data bus ran at the ESP32's default 100 kHz. One line, <code>Wire.setClock(400000)</code>, raised it to 400 kHz.</p>
+        <p class="verdict"><strong>705 readings per second</strong> after the fix, so a new reading every 1.42 ms instead of every 3.70 ms. A 5 ms hit now gets about 3.5 readings instead of 1.4.</p>
+      </div>
+      <figure class="chart"><svg viewBox="0 0 520 150" role="img" aria-label="Loop rate: 270 readings per second on the default 100 kHz bus, 705 after raising it to 400 kHz. The accelerometer updates 800 times per second." font-family="Archivo, Helvetica Neue, Arial, sans-serif"><line x1="120.0" y1="18" x2="120.0" y2="114" stroke="#e3e8e4"/><text x="120.0" y="132.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">0</text><line x1="236.7" y1="18" x2="236.7" y2="114" stroke="#e3e8e4"/><text x="236.7" y="132.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">300</text><line x1="353.3" y1="18" x2="353.3" y2="114" stroke="#e3e8e4"/><text x="353.3" y="132.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">600</text><line x1="470.0" y1="18" x2="470.0" y2="114" stroke="#e3e8e4"/><text x="470.0" y="132.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">900</text><g class="mark"><path d="M120 28 h101.0 a4 4 0 0 1 4 4 v14 a4 4 0 0 1 -4 4 h-101.0 z" fill="#c47f0e"/><title>100 kHz bus: 270 readings/s</title></g><text x="110.0" y="43.0" font-size="12.5" fill="#1e2a33" text-anchor="end" font-weight="600">100 kHz bus</text><text x="233.0" y="43.0" font-size="12.5" fill="#1e2a33" text-anchor="start" font-weight="600">270/s</text><g class="mark"><path d="M120 68 h270.2 a4 4 0 0 1 4 4 v14 a4 4 0 0 1 -4 4 h-270.2 z" fill="#1f73a3"/><title>400 kHz bus: 705 readings/s</title></g><text x="110.0" y="83.0" font-size="12.5" fill="#1e2a33" text-anchor="end" font-weight="600">400 kHz bus</text><text x="402.2" y="83.0" font-size="12.5" fill="#1e2a33" text-anchor="start" font-weight="600">705/s</text><line x1="431.1" y1="12" x2="431.1" y2="114" stroke="#1e2a33" stroke-width="1.5" stroke-dasharray="4 3"/><text x="516.0" y="146.0" font-size="11.5" fill="#5a6670" text-anchor="end" font-weight="400">readings per second  ·  dashed: sensor’s 800/s</text></svg><figcaption>Loop speed before and after raising the bus speed, as measured by the console.</figcaption></figure>
+    </div>
+
+    <div class="test-block">
+      <div class="test-text">
+        <h3>3. Accuracy drops: the impulse check</h3>
+        <p>A dropped helmet hits the ground at a speed set only by the height, √(2gh), which I measure with a tape measure. To stop it, the ground has to deliver a fixed total push whatever the surface, so the area under the sensor's acceleration spike has to equal the change in speed.</p>
+        <p>With no bounce the ratio is 1, and with a perfect bounce it is 2. If the sensor read 30% low, the ratio would fall below 1, which can't happen physically. The device records 64 readings before each impact and 192 after, with microsecond timestamps, and the console adds up the area. Anything from 0.85 to 2.15 passes.</p>
+        <p class="verdict"><strong>All 19 drops passed</strong>, with ratios from 0.95 to 1.44 (mean 1.23 ± 0.11) and 23 to 41 readings inside each impact.</p>
+      </div>
+      <figure class="chart"><svg viewBox="0 0 680 300" role="img" aria-label="Impulse ratio for all 19 accuracy drops, between 0.95 and 1.44, all inside the 0.85 to 2.15 pass band." font-family="Archivo, Helvetica Neue, Arial, sans-serif"><rect x="58" y="38.0" width="598" height="208.0" fill="#1f73a3" opacity="0.06"/><line x1="58" y1="222.0" x2="656" y2="222.0" stroke="#e3e8e4"/><text x="48.0" y="226.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">1.0×</text><line x1="58" y1="142.0" x2="656" y2="142.0" stroke="#e3e8e4"/><text x="48.0" y="146.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">1.5×</text><line x1="58" y1="62.0" x2="656" y2="62.0" stroke="#e3e8e4"/><text x="48.0" y="66.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">2.0×</text><line x1="58" y1="246.0" x2="656" y2="246.0" stroke="#1f73a3" stroke-dasharray="4 4" opacity="0.6"/><line x1="58" y1="38.0" x2="656" y2="38.0" stroke="#1f73a3" stroke-dasharray="4 4" opacity="0.6"/><text x="64.0" y="240.0" font-size="11.5" fill="#5a6670" text-anchor="start" font-weight="400">pass band: 0.85 to 2.15</text><text x="656.0" y="216.0" font-size="11.5" fill="#5a6670" text-anchor="end" font-weight="400">no bounce</text><text x="656.0" y="56.0" font-size="11.5" fill="#5a6670" text-anchor="end" font-weight="400">perfect bounce</text><g class="mark"><circle cx="112.8" cy="178.8" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 6, 61 cm: ratio 1.27</title></g><g class="mark"><circle cx="126.1" cy="191.4" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 7, 61 cm: ratio 1.19</title></g><g class="mark"><circle cx="139.4" cy="186.6" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 8, 61 cm: ratio 1.22</title></g><g class="mark"><circle cx="152.8" cy="187.8" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 9, 61 cm: ratio 1.21</title></g><text x="132.8" y="276.0" font-size="12.5" fill="#1e2a33" text-anchor="middle" font-weight="600">61 cm</text><g class="mark"><circle cx="262.2" cy="204.7" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 1, 91 cm: ratio 1.11</title></g><g class="mark"><circle cx="272.2" cy="179.1" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 2, 91 cm: ratio 1.27</title></g><g class="mark"><circle cx="282.2" cy="181.8" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 3, 91 cm: ratio 1.25</title></g><g class="mark"><circle cx="292.2" cy="197.2" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 4, 91 cm: ratio 1.16</title></g><g class="mark"><circle cx="302.2" cy="176.6" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 5, 91 cm: ratio 1.28</title></g><text x="282.2" y="276.0" font-size="12.5" fill="#1e2a33" text-anchor="middle" font-weight="600">91 cm</text><g class="mark"><circle cx="411.8" cy="180.4" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 10, 122 cm: ratio 1.26</title></g><g class="mark"><circle cx="421.8" cy="176.1" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 11, 122 cm: ratio 1.29</title></g><g class="mark"><circle cx="431.8" cy="202.6" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 12, 122 cm: ratio 1.12</title></g><g class="mark"><circle cx="441.8" cy="160.9" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 13, 122 cm: ratio 1.38</title></g><g class="mark"><circle cx="451.8" cy="151.4" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 14, 122 cm: ratio 1.44</title></g><text x="431.8" y="276.0" font-size="12.5" fill="#1e2a33" text-anchor="middle" font-weight="600">122 cm</text><g class="mark"><circle cx="561.2" cy="191.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 15, 152 cm: ratio 1.19</title></g><g class="mark"><circle cx="571.2" cy="200.4" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 16, 152 cm: ratio 1.14</title></g><g class="mark"><circle cx="581.2" cy="182.8" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 17, 152 cm: ratio 1.25</title></g><g class="mark"><circle cx="591.2" cy="229.7" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 18, 152 cm: ratio 0.95</title></g><g class="mark"><circle cx="601.2" cy="159.9" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Accuracy drop 19, 152 cm: ratio 1.39</title></g><text x="581.2" y="276.0" font-size="12.5" fill="#1e2a33" text-anchor="middle" font-weight="600">152 cm</text><text x="8.0" y="18.0" font-size="12" fill="#5a6670" text-anchor="start" font-weight="400">Impulse ratio</text></svg><figcaption>Impulse ratio for every accuracy drop, grouped by height.</figcaption></figure>
+    </div>
+    <details class="data-table">
+      <summary>All 19 accuracy drops</summary>
+      <div class="table-scroll"><table class="parts data "><thead><tr><th>Drop</th><th>Height (cm)</th><th>Peak (g)</th><th>Contact (ms)</th><th>Impact speed (m/s)</th><th>Measured Δv (m/s)</th><th>Ratio</th><th>Readings in contact</th></tr></thead><tbody><tr><td>1</td><td>91</td><td>88.8</td><td>53.5</td><td>4.24</td><td>4.70</td><td>1.11</td><td>29</td></tr><tr><td>2</td><td>91</td><td>87.1</td><td>51.8</td><td>4.24</td><td>5.37</td><td>1.27</td><td>28</td></tr><tr><td>3</td><td>91</td><td>92.4</td><td>51.8</td><td>4.24</td><td>5.30</td><td>1.25</td><td>28</td></tr><tr><td>4</td><td>91</td><td>101.8</td><td>46.2</td><td>4.24</td><td>4.89</td><td>1.16</td><td>25</td></tr><tr><td>5</td><td>91</td><td>95.9</td><td>46.2</td><td>4.24</td><td>5.44</td><td>1.28</td><td>25</td></tr><tr><td>6</td><td>61</td><td>80.1</td><td>44.3</td><td>3.46</td><td>4.39</td><td>1.27</td><td>24</td></tr><tr><td>7</td><td>61</td><td>75.4</td><td>44.3</td><td>3.46</td><td>4.12</td><td>1.19</td><td>24</td></tr><tr><td>8</td><td>61</td><td>72.7</td><td>46.2</td><td>3.46</td><td>4.22</td><td>1.22</td><td>23</td></tr><tr><td>9</td><td>61</td><td>74.2</td><td>44.4</td><td>3.46</td><td>4.20</td><td>1.21</td><td>24</td></tr><tr><td>10</td><td>122</td><td>115.5</td><td>64.7</td><td>4.89</td><td>6.16</td><td>1.26</td><td>35</td></tr><tr><td>11</td><td>122</td><td>139.9</td><td>46.2</td><td>4.89</td><td>6.29</td><td>1.29</td><td>25</td></tr><tr><td>12</td><td>122</td><td>103.8</td><td>68.3</td><td>4.89</td><td>5.48</td><td>1.12</td><td>37</td></tr><tr><td>13</td><td>122</td><td>128.2</td><td>48.1</td><td>4.89</td><td>6.76</td><td>1.38</td><td>26</td></tr><tr><td>14</td><td>122</td><td>127.5</td><td>75.7</td><td>4.89</td><td>7.05</td><td>1.44</td><td>41</td></tr><tr><td>15</td><td>152</td><td>130.4</td><td>42.5</td><td>5.47</td><td>6.53</td><td>1.19</td><td>23</td></tr><tr><td>16</td><td>152</td><td>126.6</td><td>48.1</td><td>5.47</td><td>6.20</td><td>1.14</td><td>26</td></tr><tr><td>17</td><td>152</td><td>140.8</td><td>49.9</td><td>5.47</td><td>6.81</td><td>1.25</td><td>27</td></tr><tr><td>18</td><td>152</td><td>103.5</td><td>55.4</td><td>5.47</td><td>5.21</td><td>0.95</td><td>30</td></tr><tr><td>19</td><td>152</td><td>160.7</td><td>46.2</td><td>5.47</td><td>7.59</td><td>1.39</td><td>25</td></tr></tbody></table></div>
+    </details>
+
+    <div class="test-block">
+      <div class="test-text">
+        <h3>Peak g against drop height</h3>
+        <p>On the accuracy drops, peak g rose with height to the power 0.64 ± 0.08. That is between a springy surface (0.5) and a crushing one (1.0), as expected for grass over soil, and puts 80 g at about 68 cm for that session.</p>
+        <p>Repeatability got worse with height, from ±4% at 61 cm to ±16% at 152 cm, and peaks varied about 30% between sessions. So I report the height that reaches 80 g as a range, 50 to 70 cm.</p>
+      </div>
+      <figure class="chart"><svg viewBox="0 0 680 420" role="img" aria-label="Peak g against drop height on grass for every drop: 19 accuracy drops at 61, 91, 122 and 152 cm, 25 alert drops at 30, 61 and 91 cm, and 10 re-test drops at 91 cm. 80 g is reached between about 50 and 70 cm." font-family="Archivo, Helvetica Neue, Arial, sans-serif"><rect x="239.2" y="64" width="72.5" height="304" fill="#c47f0e" opacity="0.08"/><line x1="58" y1="368.0" x2="656" y2="368.0" stroke="#e3e8e4"/><text x="48.0" y="372.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">0</text><line x1="58" y1="296.5" x2="656" y2="296.5" stroke="#e3e8e4"/><text x="48.0" y="300.5" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">40</text><line x1="58" y1="224.9" x2="656" y2="224.9" stroke="#e3e8e4"/><text x="48.0" y="228.9" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">80</text><line x1="58" y1="153.4" x2="656" y2="153.4" stroke="#e3e8e4"/><text x="48.0" y="157.4" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">120</text><line x1="58" y1="81.9" x2="656" y2="81.9" stroke="#e3e8e4"/><text x="48.0" y="85.9" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">160</text><text x="58.0" y="388.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">0</text><text x="166.7" y="388.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">30</text><text x="279.1" y="388.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">61</text><text x="387.8" y="388.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">91</text><text x="500.2" y="388.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">122</text><text x="608.9" y="388.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">152</text><line x1="58" y1="368" x2="656" y2="368" stroke="#9aa6a0"/><text x="656.0" y="410.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">Drop height (cm)</text><text x="48.0" y="50.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">Peak (g)</text><line x1="58" y1="224.9" x2="656" y2="224.9" stroke="#d8402a" stroke-width="1.5" stroke-dasharray="6 5"/><text x="656.0" y="217.9" font-size="12" fill="#d8402a" text-anchor="end" font-weight="600">80 g alert</text><text x="275.5" y="80.0" font-size="12" fill="#1e2a33" text-anchor="middle" font-weight="600">80 g reached at</text><text x="275.5" y="95.0" font-size="12" fill="#1e2a33" text-anchor="middle" font-weight="400">50–70 cm</text><polyline points="148.6,292.4 155.9,288.6 163.1,284.9 170.4,281.3 177.6,277.7 184.8,274.3 192.1,270.9 199.3,267.6 206.6,264.3 213.8,261.1 221.1,257.9 228.3,254.8 235.6,251.8 242.8,248.8 250.1,245.8 257.3,242.9 264.6,240.0 271.8,237.1 279.1,234.3 286.3,231.5 293.6,228.8 300.8,226.1 308.1,223.4 315.3,220.7 322.6,218.1 329.8,215.5 337.1,212.9 344.3,210.3 351.6,207.8 358.8,205.3 366.1,202.8 373.3,200.3 380.6,197.8 387.8,195.4 395.1,193.0 402.3,190.6 409.6,188.2 416.8,185.9 424.0,183.5 431.3,181.2 438.5,178.9 445.8,176.6 453.0,174.3 460.3,172.1 467.5,169.8 474.8,167.6 482.0,165.4 489.3,163.2 496.5,161.0 503.8,158.8 511.0,156.6 518.3,154.5 525.5,152.3 532.8,150.2 540.0,148.1 547.3,146.0 554.5,143.9 561.8,141.8 569.0,139.7 576.3,137.6 583.5,135.6 590.8,133.6 598.0,131.5 605.3,129.5 612.5,127.5 619.8,125.5 627.0,123.5 634.3,121.5" fill="none" stroke="#1f73a3" stroke-width="1.5" stroke-dasharray="2 4" opacity="0.8"/><text x="159.5" y="308.7" font-size="11.5" fill="#5a6670" text-anchor="start" font-weight="400">fit to accuracy drops: peak ∝ height^0.64</text><g class="mark"><circle cx="374.8" cy="209.2" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 1, 91 cm: 88.8 g</title></g><g class="mark"><circle cx="377.3" cy="212.2" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 2, 91 cm: 87.1 g</title></g><g class="mark"><circle cx="379.8" cy="202.8" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 3, 91 cm: 92.4 g</title></g><g class="mark"><circle cx="382.3" cy="186.0" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 4, 91 cm: 101.8 g</title></g><g class="mark"><circle cx="384.8" cy="196.5" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 5, 91 cm: 95.9 g</title></g><g class="mark"><circle cx="266.1" cy="224.7" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 6, 61 cm: 80.1 g</title></g><g class="mark"><circle cx="269.4" cy="233.2" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 7, 61 cm: 75.4 g</title></g><g class="mark"><circle cx="272.7" cy="238.0" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 8, 61 cm: 72.7 g</title></g><g class="mark"><circle cx="276.1" cy="235.3" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 9, 61 cm: 74.2 g</title></g><g class="mark"><circle cx="487.2" cy="161.4" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 10, 122 cm: 115.5 g</title></g><g class="mark"><circle cx="489.7" cy="117.8" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 11, 122 cm: 139.9 g</title></g><g class="mark"><circle cx="492.2" cy="182.3" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 12, 122 cm: 103.8 g</title></g><g class="mark"><circle cx="494.7" cy="138.8" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 13, 122 cm: 128.2 g</title></g><g class="mark"><circle cx="497.2" cy="140.0" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 14, 122 cm: 127.5 g</title></g><g class="mark"><circle cx="595.9" cy="134.8" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 15, 152 cm: 130.4 g</title></g><g class="mark"><circle cx="598.4" cy="141.6" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 16, 152 cm: 126.6 g</title></g><g class="mark"><circle cx="600.9" cy="116.3" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 17, 152 cm: 140.8 g</title></g><g class="mark"><circle cx="603.4" cy="183.0" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 18, 152 cm: 103.5 g</title></g><g class="mark"><circle cx="605.9" cy="80.7" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Accuracy drop 19, 152 cm: 160.7 g</title></g><g class="mark"><rect x="279.6" y="212.8" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 1, 61 cm: 84.8 g</title></g><g class="mark"><rect x="280.9" y="230.6" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 2, 61 cm: 74.9 g</title></g><g class="mark"><rect x="282.2" y="211.8" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 3, 61 cm: 85.4 g</title></g><g class="mark"><rect x="283.6" y="230.7" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 4, 61 cm: 74.8 g</title></g><g class="mark"><rect x="284.9" y="216.6" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 5, 61 cm: 82.7 g</title></g><g class="mark"><rect x="286.2" y="198.7" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 6, 61 cm: 92.7 g</title></g><g class="mark"><rect x="287.6" y="230.6" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 7, 61 cm: 74.9 g</title></g><g class="mark"><rect x="288.9" y="197.9" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 8, 61 cm: 93.1 g</title></g><g class="mark"><rect x="290.2" y="192.4" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 9, 61 cm: 96.2 g</title></g><g class="mark"><rect x="291.6" y="214.4" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 10, 61 cm: 84.0 g</title></g><g class="mark"><rect x="167.2" y="292.6" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 11, 30 cm: 40.2 g</title></g><g class="mark"><rect x="168.6" y="276.8" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 12, 30 cm: 49.0 g</title></g><g class="mark"><rect x="169.9" y="254.9" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 13, 30 cm: 61.3 g</title></g><g class="mark"><rect x="171.2" y="249.2" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 14, 30 cm: 64.5 g</title></g><g class="mark"><rect x="172.6" y="255.3" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 15, 30 cm: 61.0 g</title></g><g class="mark"><rect x="173.9" y="274.2" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 21, 30 cm: 50.5 g</title></g><g class="mark"><rect x="175.2" y="318.0" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 22, 30 cm: 26.0 g</title></g><g class="mark"><rect x="176.6" y="269.5" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 23, 30 cm: 53.1 g</title></g><g class="mark"><rect x="177.9" y="256.3" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 24, 30 cm: 60.5 g</title></g><g class="mark"><rect x="179.2" y="249.9" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 25, 30 cm: 64.1 g</title></g><g class="mark"><rect x="388.3" y="157.3" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 16, 91 cm: 115.9 g</title></g><g class="mark"><rect x="391.3" y="158.9" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 17, 91 cm: 115.0 g</title></g><g class="mark"><rect x="394.3" y="169.1" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 18, 91 cm: 109.3 g</title></g><g class="mark"><rect x="397.3" y="139.9" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 19, 91 cm: 125.6 g</title></g><g class="mark"><rect x="400.3" y="145.6" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><title>Alert drop 20, 91 cm: 122.4 g</title></g><g class="mark"><circle cx="410.8" cy="142.0" r="4" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.2"/><title>Re-test drop at 91 cm: 126.4 g</title></g><g class="mark"><circle cx="412.4" cy="176.1" r="4" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.2"/><title>Re-test drop at 91 cm: 107.3 g</title></g><g class="mark"><circle cx="413.9" cy="142.3" r="4" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.2"/><title>Re-test drop at 91 cm: 126.2 g</title></g><g class="mark"><circle cx="415.5" cy="117.5" r="4" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.2"/><title>Re-test drop at 91 cm: 140.1 g</title></g><g class="mark"><circle cx="417.0" cy="188.8" r="4" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.2"/><title>Re-test drop at 91 cm: 100.2 g</title></g><g class="mark"><circle cx="418.6" cy="155.0" r="4" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.2"/><title>Re-test drop at 91 cm: 119.1 g</title></g><g class="mark"><circle cx="420.1" cy="110.7" r="4" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.2"/><title>Re-test drop at 91 cm: 143.9 g</title></g><g class="mark"><circle cx="421.7" cy="116.8" r="4" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.2"/><title>Re-test drop at 91 cm: 140.5 g</title></g><g class="mark"><circle cx="423.3" cy="159.3" r="4" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.2"/><title>Re-test drop at 91 cm: 116.7 g</title></g><g class="mark"><circle cx="424.8" cy="164.3" r="4" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.2"/><title>Re-test drop at 91 cm: 113.9 g</title></g><g class="mark"><circle cx="68.0" cy="20.0" r="4.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>legend</title></g><text x="80.0" y="24.0" font-size="12" fill="#1e2a33" text-anchor="start" font-weight="400">Accuracy drops (19)</text><rect x="234" y="16.5" width="7" height="7" fill="#fbfcfa" stroke="#c47f0e" stroke-width="1.6"/><text x="250.0" y="24.0" font-size="12" fill="#1e2a33" text-anchor="start" font-weight="400">Alert drops (25)</text><g class="mark"><circle cx="388.0" cy="20.0" r="4" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.2"/><title>legend</title></g><text x="400.0" y="24.0" font-size="12" fill="#1e2a33" text-anchor="start" font-weight="400">91 cm re-test (10)</text></svg><figcaption>Every drop from all three drop tests. Points at the same height are spread sideways so they don't overlap.</figcaption></figure>
+    </div>
+
+    <div class="test-block">
+      <div class="test-text">
+        <h3>4. Alert drops</h3>
+        <p>With the system running, the console holds the biggest hit from each drop, works out whether it should have alerted, and checks whether the device actually did. 25 drops from 30, 61 and 91 cm.</p>
+        <p class="verdict"><strong>25 of 25 correct.</strong> All 12 drops above 80 g alerted and none of the 13 below did, including 82.7 and 84.0 g just above the line and 74.8 and 74.9 g just below it. Rotation never passed 415 °/s, so these drops tested only the linear alert.</p>
+      </div>
+      <figure class="chart"><svg viewBox="0 0 680 250" role="img" aria-label="All 25 alert drops by peak g. Every drop above 80 g alerted and none below did. The closest were 74.8 and 74.9 g (quiet) and 82.7 and 84.0 g (alerted)." font-family="Archivo, Helvetica Neue, Arial, sans-serif"><line x1="70.0" y1="40" x2="70.0" y2="204" stroke="#e3e8e4"/><text x="70.0" y="224.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">20</text><line x1="123.3" y1="40" x2="123.3" y2="204" stroke="#e3e8e4"/><text x="123.3" y="224.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">30</text><line x1="176.5" y1="40" x2="176.5" y2="204" stroke="#e3e8e4"/><text x="176.5" y="224.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">40</text><line x1="229.8" y1="40" x2="229.8" y2="204" stroke="#e3e8e4"/><text x="229.8" y="224.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">50</text><line x1="283.1" y1="40" x2="283.1" y2="204" stroke="#e3e8e4"/><text x="283.1" y="224.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">60</text><line x1="336.4" y1="40" x2="336.4" y2="204" stroke="#e3e8e4"/><text x="336.4" y="224.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">70</text><line x1="389.6" y1="40" x2="389.6" y2="204" stroke="#e3e8e4"/><text x="389.6" y="224.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">80</text><line x1="442.9" y1="40" x2="442.9" y2="204" stroke="#e3e8e4"/><text x="442.9" y="224.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">90</text><line x1="496.2" y1="40" x2="496.2" y2="204" stroke="#e3e8e4"/><text x="496.2" y="224.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">100</text><line x1="549.5" y1="40" x2="549.5" y2="204" stroke="#e3e8e4"/><text x="549.5" y="224.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">110</text><line x1="602.7" y1="40" x2="602.7" y2="204" stroke="#e3e8e4"/><text x="602.7" y="224.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">120</text><line x1="656.0" y1="40" x2="656.0" y2="204" stroke="#e3e8e4"/><text x="656.0" y="224.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">130</text><text x="656.0" y="242.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">Peak (g)</text><line x1="389.6" y1="28" x2="389.6" y2="204" stroke="#d8402a" stroke-width="2"/><text x="395.6" y="38.0" font-size="12" fill="#d8402a" text-anchor="start" font-weight="600">80 g threshold</text><text x="58.0" y="71.3" font-size="12.5" fill="#1e2a33" text-anchor="end" font-weight="600">30 cm</text><g class="mark"><circle cx="102.1" cy="74.3" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 22, 30 cm: 26.0 g, no alert</title></g><g class="mark"><circle cx="177.6" cy="60.3" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 11, 30 cm: 40.2 g, no alert</title></g><g class="mark"><circle cx="224.7" cy="74.3" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 12, 30 cm: 49.0 g, no alert</title></g><g class="mark"><circle cx="232.3" cy="60.3" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 21, 30 cm: 50.5 g, no alert</title></g><g class="mark"><circle cx="246.5" cy="74.3" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 23, 30 cm: 53.1 g, no alert</title></g><g class="mark"><circle cx="285.6" cy="60.3" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 24, 30 cm: 60.5 g, no alert</title></g><g class="mark"><circle cx="288.7" cy="74.3" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 15, 30 cm: 61.0 g, no alert</title></g><g class="mark"><circle cx="289.9" cy="60.3" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 13, 30 cm: 61.3 g, no alert</title></g><g class="mark"><circle cx="304.9" cy="74.3" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 25, 30 cm: 64.1 g, no alert</title></g><g class="mark"><circle cx="306.9" cy="60.3" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 14, 30 cm: 64.5 g, no alert</title></g><text x="58.0" y="126.0" font-size="12.5" fill="#1e2a33" text-anchor="end" font-weight="600">61 cm</text><g class="mark"><circle cx="361.9" cy="129.0" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 4, 61 cm: 74.8 g, no alert</title></g><g class="mark"><circle cx="362.4" cy="115.0" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 2, 61 cm: 74.9 g, no alert</title></g><g class="mark"><circle cx="362.4" cy="129.0" r="5.5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>Alert drop 7, 61 cm: 74.9 g, no alert</title></g><g class="mark"><circle cx="404.0" cy="115.0" r="5.5" fill="#d8402a" stroke="#fbfcfa" stroke-width="1.6"/><title>Alert drop 5, 61 cm: 82.7 g, alerted</title></g><g class="mark"><circle cx="410.7" cy="129.0" r="5.5" fill="#d8402a" stroke="#fbfcfa" stroke-width="1.6"/><title>Alert drop 10, 61 cm: 84.0 g, alerted</title></g><g class="mark"><circle cx="415.3" cy="115.0" r="5.5" fill="#d8402a" stroke="#fbfcfa" stroke-width="1.6"/><title>Alert drop 1, 61 cm: 84.8 g, alerted</title></g><g class="mark"><circle cx="418.5" cy="129.0" r="5.5" fill="#d8402a" stroke="#fbfcfa" stroke-width="1.6"/><title>Alert drop 3, 61 cm: 85.4 g, alerted</title></g><g class="mark"><circle cx="457.5" cy="115.0" r="5.5" fill="#d8402a" stroke="#fbfcfa" stroke-width="1.6"/><title>Alert drop 6, 61 cm: 92.7 g, alerted</title></g><g class="mark"><circle cx="459.6" cy="129.0" r="5.5" fill="#d8402a" stroke="#fbfcfa" stroke-width="1.6"/><title>Alert drop 8, 61 cm: 93.1 g, alerted</title></g><g class="mark"><circle cx="476.2" cy="115.0" r="5.5" fill="#d8402a" stroke="#fbfcfa" stroke-width="1.6"/><title>Alert drop 9, 61 cm: 96.2 g, alerted</title></g><text x="58.0" y="180.7" font-size="12.5" fill="#1e2a33" text-anchor="end" font-weight="600">91 cm</text><g class="mark"><circle cx="545.7" cy="183.7" r="5.5" fill="#d8402a" stroke="#fbfcfa" stroke-width="1.6"/><title>Alert drop 18, 91 cm: 109.3 g, alerted</title></g><g class="mark"><circle cx="575.9" cy="169.7" r="5.5" fill="#d8402a" stroke="#fbfcfa" stroke-width="1.6"/><title>Alert drop 17, 91 cm: 115.0 g, alerted</title></g><g class="mark"><circle cx="580.8" cy="183.7" r="5.5" fill="#d8402a" stroke="#fbfcfa" stroke-width="1.6"/><title>Alert drop 16, 91 cm: 115.9 g, alerted</title></g><g class="mark"><circle cx="615.7" cy="169.7" r="5.5" fill="#d8402a" stroke="#fbfcfa" stroke-width="1.6"/><title>Alert drop 20, 91 cm: 122.4 g, alerted</title></g><g class="mark"><circle cx="632.6" cy="183.7" r="5.5" fill="#d8402a" stroke="#fbfcfa" stroke-width="1.6"/><title>Alert drop 19, 91 cm: 125.6 g, alerted</title></g><g class="mark"><circle cx="78.0" cy="14.0" r="5" fill="#d8402a" stroke="#fbfcfa" stroke-width="2"/><title>legend</title></g><text x="90.0" y="18.0" font-size="12" fill="#1e2a33" text-anchor="start" font-weight="400">alerted</text><g class="mark"><circle cx="158.0" cy="14.0" r="5" fill="#fbfcfa" stroke="#5a6670" stroke-width="1.6"/><title>legend</title></g><text x="170.0" y="18.0" font-size="12" fill="#1e2a33" text-anchor="start" font-weight="400">stayed quiet</text></svg><figcaption>Every alert drop, by drop height and peak g.</figcaption></figure>
+    </div>
+    <details class="data-table">
+      <summary>All 25 alert drops</summary>
+      <div class="table-scroll"><table class="parts data "><thead><tr><th>Drop</th><th>Height (cm)</th><th>Peak (g)</th><th>Peak (°/s)</th><th>Should alert</th><th>Did alert</th><th>Result</th></tr></thead><tbody><tr><td>1</td><td>61</td><td>84.8</td><td>276</td><td>Yes</td><td>Yes</td><td>Correct</td></tr><tr><td>2</td><td>61</td><td>74.9</td><td>232</td><td>No</td><td>No</td><td>Correct</td></tr><tr><td>3</td><td>61</td><td>85.4</td><td>216</td><td>Yes</td><td>Yes</td><td>Correct</td></tr><tr><td>4</td><td>61</td><td>74.8</td><td>238</td><td>No</td><td>No</td><td>Correct</td></tr><tr><td>5</td><td>61</td><td>82.7</td><td>235</td><td>Yes</td><td>Yes</td><td>Correct</td></tr><tr><td>6</td><td>61</td><td>92.7</td><td>415</td><td>Yes</td><td>Yes</td><td>Correct</td></tr><tr><td>7</td><td>61</td><td>74.9</td><td>345</td><td>No</td><td>No</td><td>Correct</td></tr><tr><td>8</td><td>61</td><td>93.1</td><td>309</td><td>Yes</td><td>Yes</td><td>Correct</td></tr><tr><td>9</td><td>61</td><td>96.2</td><td>332</td><td>Yes</td><td>Yes</td><td>Correct</td></tr><tr><td>10</td><td>61</td><td>84.0</td><td>277</td><td>Yes</td><td>Yes</td><td>Correct</td></tr><tr><td>11</td><td>30</td><td>40.2</td><td>256</td><td>No</td><td>No</td><td>Correct</td></tr><tr><td>12</td><td>30</td><td>49.0</td><td>326</td><td>No</td><td>No</td><td>Correct</td></tr><tr><td>13</td><td>30</td><td>61.3</td><td>318</td><td>No</td><td>No</td><td>Correct</td></tr><tr><td>14</td><td>30</td><td>64.5</td><td>237</td><td>No</td><td>No</td><td>Correct</td></tr><tr><td>15</td><td>30</td><td>61.0</td><td>327</td><td>No</td><td>No</td><td>Correct</td></tr><tr><td>16</td><td>91</td><td>115.9</td><td>316</td><td>Yes</td><td>Yes</td><td>Correct</td></tr><tr><td>17</td><td>91</td><td>115.0</td><td>327</td><td>Yes</td><td>Yes</td><td>Correct</td></tr><tr><td>18</td><td>91</td><td>109.3</td><td>311</td><td>Yes</td><td>Yes</td><td>Correct</td></tr><tr><td>19</td><td>91</td><td>125.6</td><td>393</td><td>Yes</td><td>Yes</td><td>Correct</td></tr><tr><td>20</td><td>91</td><td>122.4</td><td>354</td><td>Yes</td><td>Yes</td><td>Correct</td></tr><tr><td>21</td><td>30</td><td>50.5</td><td>342</td><td>No</td><td>No</td><td>Correct</td></tr><tr><td>22</td><td>30</td><td>26.0</td><td>307</td><td>No</td><td>No</td><td>Correct</td></tr><tr><td>23</td><td>30</td><td>53.1</td><td>341</td><td>No</td><td>No</td><td>Correct</td></tr><tr><td>24</td><td>30</td><td>60.5</td><td>396</td><td>No</td><td>No</td><td>Correct</td></tr><tr><td>25</td><td>30</td><td>64.1</td><td>275</td><td>No</td><td>No</td><td>Correct</td></tr></tbody></table></div>
+    </details>
+
+    <div class="test-block">
+      <div class="test-text">
+        <h3>Testing a hypothesis</h3>
+        <p>The alert drops read 12% higher than the accuracy drops at 61 cm and 26% higher at 91 cm. I thought the accuracy drops might have read low because they ran before I sped up the loop, so slow sampling could have missed the tops of the spikes. The ground and my release had also changed between sessions, so I ran a controlled test at the same spot and height (91 cm) in one session, changing only the bus speed.</p>
+        <p class="verdict"><strong>Loop speed wasn't the cause.</strong> The 6% difference is within the normal drop-to-drop scatter, and both sets matched the alert drops, so the gap most likely came from the ground. On grass the impact spike lasts 8 to 10 ms, long enough for either loop speed to catch the peak. Faster sampling should matter more on hard surfaces.</p>
+      </div>
+      <figure class="chart"><svg viewBox="0 0 520 300" role="img" aria-label="Controlled re-test at 91 cm. Slow loop peaks 126.4, 107.3, 126.2, 140.1, 100.2 g, mean 120.0. Fast loop peaks 119.1, 143.9, 140.5, 116.7, 113.9 g, mean 126.8." font-family="Archivo, Helvetica Neue, Arial, sans-serif"><line x1="58" y1="254.0" x2="496" y2="254.0" stroke="#e3e8e4"/><text x="48.0" y="258.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">80</text><line x1="58" y1="198.0" x2="496" y2="198.0" stroke="#e3e8e4"/><text x="48.0" y="202.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">100</text><line x1="58" y1="142.0" x2="496" y2="142.0" stroke="#e3e8e4"/><text x="48.0" y="146.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">120</text><line x1="58" y1="86.0" x2="496" y2="86.0" stroke="#e3e8e4"/><text x="48.0" y="90.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">140</text><line x1="58" y1="30.0" x2="496" y2="30.0" stroke="#e3e8e4"/><text x="48.0" y="34.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">160</text><text x="48.0" y="18.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">Peak (g)</text><line x1="121.5" y1="141.9" x2="213.5" y2="141.9" stroke="#1e2a33" stroke-width="2"/><g class="mark"><circle cx="143.5" cy="124.1" r="6" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Slow loop, 270/s: 126.4 g</title></g><g class="mark"><circle cx="155.5" cy="177.6" r="6" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Slow loop, 270/s: 107.3 g</title></g><g class="mark"><circle cx="167.5" cy="124.6" r="6" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Slow loop, 270/s: 126.2 g</title></g><g class="mark"><circle cx="179.5" cy="85.7" r="6" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Slow loop, 270/s: 140.1 g</title></g><g class="mark"><circle cx="191.5" cy="197.4" r="6" fill="#1f73a3" stroke="#fbfcfa" stroke-width="2"/><title>Slow loop, 270/s: 100.2 g</title></g><text x="219.5" y="145.9" font-size="12" fill="#1e2a33" text-anchor="start" font-weight="600">120.0 ± 16.1</text><text x="167.5" y="276.0" font-size="12.5" fill="#1e2a33" text-anchor="middle" font-weight="600">Slow loop, 270/s</text><line x1="340.5" y1="122.9" x2="432.5" y2="122.9" stroke="#1e2a33" stroke-width="2"/><g class="mark"><circle cx="362.5" cy="144.5" r="6" fill="#c47f0e" stroke="#fbfcfa" stroke-width="2"/><title>Fast loop, 705/s: 119.1 g</title></g><g class="mark"><circle cx="374.5" cy="75.1" r="6" fill="#c47f0e" stroke="#fbfcfa" stroke-width="2"/><title>Fast loop, 705/s: 143.9 g</title></g><g class="mark"><circle cx="386.5" cy="84.6" r="6" fill="#c47f0e" stroke="#fbfcfa" stroke-width="2"/><title>Fast loop, 705/s: 140.5 g</title></g><g class="mark"><circle cx="398.5" cy="151.2" r="6" fill="#c47f0e" stroke="#fbfcfa" stroke-width="2"/><title>Fast loop, 705/s: 116.7 g</title></g><g class="mark"><circle cx="410.5" cy="159.1" r="6" fill="#c47f0e" stroke="#fbfcfa" stroke-width="2"/><title>Fast loop, 705/s: 113.9 g</title></g><text x="438.5" y="126.9" font-size="12" fill="#1e2a33" text-anchor="start" font-weight="600">126.8 ± 14.2</text><text x="386.5" y="276.0" font-size="12.5" fill="#1e2a33" text-anchor="middle" font-weight="600">Fast loop, 705/s</text></svg><figcaption>Every re-test drop at 91 cm. The line is each set's mean. One slow drop (9.0 g with 186 ms of contact, probably a cushioned landing on the facemask) is left out; its ratio was still 1.05.</figcaption></figure>
+    </div>
+    <figure class="photo console-shot">
+      <img src="images/console-waveform.png" alt="Console waveform of a 91 cm re-test drop: one sharp spike to about 114 g inside the shaded contact window, then a small tail" loading="lazy">
+      <figcaption>The console's capture of fast-loop drop 5 (113.9 g). The shaded band is the time in contact with the ground.</figcaption>
+    </figure>
+    <details class="data-table">
+      <summary>All 11 re-test drops</summary>
+      <div class="table-scroll"><table class="parts data "><thead><tr><th>Loop</th><th>Drop</th><th>Peak (g)</th><th>Contact (ms)</th><th>Measured Δv (m/s)</th><th>Ratio</th><th>Readings in contact</th><th></th></tr></thead><tbody><tr class=""><td>Slow, 270/s</td><td>1</td><td>126.4</td><td>57.3</td><td>5.26</td><td>1.24</td><td>31</td><td>Included</td></tr><tr class=""><td>Slow, 270/s</td><td>2</td><td>107.3</td><td>59.1</td><td>4.30</td><td>1.01</td><td>32</td><td>Included</td></tr><tr class=""><td>Slow, 270/s</td><td>3</td><td>126.2</td><td>61.0</td><td>5.59</td><td>1.32</td><td>29</td><td>Included</td></tr><tr class=""><td>Slow, 270/s</td><td>4</td><td>140.1</td><td>55.4</td><td>6.30</td><td>1.49</td><td>30</td><td>Included</td></tr><tr class="excluded"><td>Slow, 270/s</td><td>5</td><td>9.0</td><td>186.4</td><td>4.44</td><td>1.05</td><td>101</td><td>Excluded: cushioned landing</td></tr><tr class=""><td>Slow, 270/s</td><td>6</td><td>100.2</td><td>60.9</td><td>5.26</td><td>1.24</td><td>33</td><td>Included</td></tr><tr class=""><td>Fast, 705/s</td><td>1</td><td>119.1</td><td>42.9</td><td>5.26</td><td>1.24</td><td>55</td><td>Included</td></tr><tr class=""><td>Fast, 705/s</td><td>2</td><td>143.9</td><td>36.6</td><td>5.43</td><td>1.28</td><td>46</td><td>Included</td></tr><tr class=""><td>Fast, 705/s</td><td>3</td><td>140.5</td><td>47.5</td><td>5.41</td><td>1.28</td><td>61</td><td>Included</td></tr><tr class=""><td>Fast, 705/s</td><td>4</td><td>116.7</td><td>37.4</td><td>5.31</td><td>1.25</td><td>48</td><td>Included</td></tr><tr class=""><td>Fast, 705/s</td><td>5</td><td>113.9</td><td>35.1</td><td>5.53</td><td>1.30</td><td>45</td><td>Included</td></tr></tbody></table></div>
+    </details>
+
+    <div class="test-block">
+      <div class="test-text">
+        <h3>5. Rotation check</h3>
+        <p>The gyroscope measures how fast the helmet turns, so adding up speed × time over a turn should equal the angle turned. I turned the helmet on a table between tape marks at 90° and 180°.</p>
+        <p>Before each turn the device re-zeros the gyroscope. It starts adding once the speed passes 10 °/s, including the 0.3 s before so the speed-up counts, and stops after half a second below 10 °/s. Each axis is summed separately so noise cancels.</p>
+        <p class="verdict"><strong>Scale factor 0.989.</strong> 90° turns measured 86.9 ± 4.2° and 180° turns 179.0 ± 1.6°. Accuracy didn't change with speed between 192 and 601 °/s. I excluded 9 of 29 trials where I turned before zeroing finished.</p>
+      </div>
+      <figure class="chart"><svg viewBox="0 0 680 280" role="img" aria-label="Rotation check, every included turn. 90 degree turns measured 86.9 plus or minus 4.2 degrees; 180 degree turns 179.0 plus or minus 1.6 degrees. Three 90 degree turns that moved during zeroing read 4.5 to 10.7 degrees low." font-family="Archivo, Helvetica Neue, Arial, sans-serif"><line x1="110.0" y1="54" x2="110.0" y2="230" stroke="#e3e8e4"/><text x="110.0" y="250.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">-12°</text><line x1="245.0" y1="54" x2="245.0" y2="230" stroke="#e3e8e4"/><text x="245.0" y="250.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">-8°</text><line x1="380.0" y1="54" x2="380.0" y2="230" stroke="#e3e8e4"/><text x="380.0" y="250.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">-4°</text><line x1="515.0" y1="54" x2="515.0" y2="230" stroke="#e3e8e4"/><text x="515.0" y="250.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">0°</text><line x1="650.0" y1="54" x2="650.0" y2="230" stroke="#e3e8e4"/><text x="650.0" y="250.0" font-size="12" fill="#5a6670" text-anchor="middle" font-weight="400">+4°</text><line x1="515.0" y1="42" x2="515.0" y2="230" stroke="#1e2a33" stroke-width="1.5"/><text x="521.0" y="50.0" font-size="12" fill="#1e2a33" text-anchor="start" font-weight="400">true angle</text><text x="650.0" y="272.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">Measured minus true angle</text><text x="94.0" y="98.0" font-size="13" fill="#1e2a33" text-anchor="end" font-weight="600">90° turns</text><text x="94.0" y="114.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">86.9 ± 4.2°</text><line x1="408.7" y1="80" x2="408.7" y2="120" stroke="#1e2a33" stroke-width="2"/><g class="mark"><circle cx="155.6" cy="109.0" r="5.5" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 11 (90°): 79.3° measured, zero drift 5.3 °/s</title></g><g class="mark"><circle cx="194.0" cy="91.0" r="5.5" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 8 (90°): 80.5° measured, zero drift 6.1 °/s</title></g><g class="mark"><circle cx="363.1" cy="109.0" r="5.5" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 13 (90°): 85.5° measured, zero drift 4.0 °/s</title></g><g class="mark"><circle cx="385.4" cy="91.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 17 (90°): 86.2° measured, zero drift 0.5 °/s</title></g><g class="mark"><circle cx="444.8" cy="109.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 3 (90°): 87.9° measured, zero drift 1.3 °/s</title></g><g class="mark"><circle cx="451.2" cy="91.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 2 (90°): 88.1° measured, zero drift 0.8 °/s</title></g><g class="mark"><circle cx="463.4" cy="109.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 4 (90°): 88.5° measured, zero drift 1.2 °/s</title></g><g class="mark"><circle cx="504.2" cy="91.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 15 (90°): 89.7° measured, zero drift 0.6 °/s</title></g><g class="mark"><circle cx="518.0" cy="109.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 12 (90°): 90.1° measured, zero drift 1.1 °/s</title></g><g class="mark"><circle cx="607.5" cy="91.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 10 (90°): 92.7° measured, zero drift 0.3 °/s</title></g><text x="94.0" y="182.0" font-size="13" fill="#1e2a33" text-anchor="end" font-weight="600">180° turns</text><text x="94.0" y="198.0" font-size="12" fill="#5a6670" text-anchor="end" font-weight="400">179.0 ± 1.6°</text><line x1="480.5" y1="164" x2="480.5" y2="204" stroke="#1e2a33" stroke-width="2"/><g class="mark"><circle cx="421.5" cy="193.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 24 (180°): 177.2° measured, zero drift 1.7 °/s</title></g><g class="mark"><circle cx="422.9" cy="175.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 26 (180°): 177.3° measured, zero drift 0.6 °/s</title></g><g class="mark"><circle cx="427.6" cy="193.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 23 (180°): 177.4° measured, zero drift 2.0 °/s</title></g><g class="mark"><circle cx="437.4" cy="175.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 22 (180°): 177.7° measured, zero drift 0.6 °/s</title></g><g class="mark"><circle cx="453.6" cy="193.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 29 (180°): 178.2° measured, zero drift 0.8 °/s</title></g><g class="mark"><circle cx="493.1" cy="175.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 21 (180°): 179.3° measured, zero drift 0.5 °/s</title></g><g class="mark"><circle cx="507.6" cy="193.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 27 (180°): 179.8° measured, zero drift 0.2 °/s</title></g><g class="mark"><circle cx="520.4" cy="175.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 25 (180°): 180.2° measured, zero drift 1.3 °/s</title></g><g class="mark"><circle cx="554.5" cy="193.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 20 (180°): 181.2° measured, zero drift 0.3 °/s</title></g><g class="mark"><circle cx="567.0" cy="175.0" r="5.5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>Turn 18 (180°): 181.5° measured, zero drift 0.7 °/s</title></g><g class="mark"><circle cx="116.0" cy="14.0" r="5" fill="#1f73a3" stroke="#fbfcfa" stroke-width="1.5"/><title>legend</title></g><text x="126.0" y="18.0" font-size="12" fill="#1e2a33" text-anchor="start" font-weight="400">each turn</text><g class="mark"><circle cx="210.0" cy="14.0" r="5" fill="#c47f0e" stroke="#fbfcfa" stroke-width="1.5"/><title>legend</title></g><text x="220.0" y="18.0" font-size="12" fill="#1e2a33" text-anchor="start" font-weight="400">helmet moved while zeroing (drift 4–6 °/s)</text><line x1="500" y1="8" x2="500" y2="20" stroke="#1e2a33" stroke-width="2"/><text x="508.0" y="18.0" font-size="12" fill="#1e2a33" text-anchor="start" font-weight="400">mean</text></svg><figcaption>Every included turn against its tape mark. The three amber turns moved during zeroing (drift 4 to 6 °/s instead of 0.2 to 2.0); without them, 90° turns averaged 89.0 ± 2.1°. Counting only readings above 10 °/s gave 87.2° and 179.4°, nearly the same.</figcaption></figure>
+    </div>
+    <details class="data-table">
+      <summary>All 29 rotation trials</summary>
+      <div class="table-scroll"><table class="parts data "><thead><tr><th>Turn</th><th>True angle (°)</th><th>Measured (°)</th><th>Error</th><th>Counting above 10 °/s (°)</th><th>Peak (°/s)</th><th>Zero drift (°/s)</th><th></th></tr></thead><tbody><tr class="excluded"><td>1</td><td>90</td><td>0.8</td><td>-99.1%</td><td>0.3</td><td>11</td><td>1.39</td><td>Excluded: turned before zeroing finished</td></tr><tr class=""><td>2</td><td>90</td><td>88.1</td><td>-2.1%</td><td>87.7</td><td>192</td><td>0.76</td><td>Included</td></tr><tr class=""><td>3</td><td>90</td><td>87.9</td><td>-2.3%</td><td>88.9</td><td>216</td><td>1.34</td><td>Included</td></tr><tr class=""><td>4</td><td>90</td><td>88.5</td><td>-1.7%</td><td>86.7</td><td>212</td><td>1.15</td><td>Included</td></tr><tr class="excluded"><td>5</td><td>90</td><td>12.6</td><td>-86.0%</td><td>10.8</td><td>215</td><td>1.46</td><td>Excluded: turned before zeroing finished</td></tr><tr class="excluded"><td>6</td><td>90</td><td>76.7</td><td>-14.8%</td><td>80.4</td><td>312</td><td>5.87</td><td>Excluded: turned before zeroing finished</td></tr><tr class="excluded"><td>7</td><td>90</td><td>1195.4</td><td>+1228.2%</td><td>1195.4</td><td>370</td><td>74.09</td><td>Excluded: turned before zeroing finished</td></tr><tr class=""><td>8</td><td>90</td><td>80.5</td><td>-10.6%</td><td>79.5</td><td>201</td><td>6.14</td><td>Included</td></tr><tr class="excluded"><td>9</td><td>90</td><td>678.3</td><td>+653.7%</td><td>678.3</td><td>252</td><td>99.56</td><td>Excluded: turned before zeroing finished</td></tr><tr class=""><td>10</td><td>90</td><td>92.7</td><td>+3.0%</td><td>94.5</td><td>346</td><td>0.27</td><td>Included</td></tr><tr class=""><td>11</td><td>90</td><td>79.3</td><td>-11.8%</td><td>84.8</td><td>339</td><td>5.28</td><td>Included</td></tr><tr class=""><td>12</td><td>90</td><td>90.1</td><td>+0.1%</td><td>90.2</td><td>319</td><td>1.09</td><td>Included</td></tr><tr class=""><td>13</td><td>90</td><td>85.5</td><td>-5.0%</td><td>85.7</td><td>320</td><td>4.00</td><td>Included</td></tr><tr class="excluded"><td>14</td><td>90</td><td>15.2</td><td>-83.1%</td><td>14.9</td><td>304</td><td>19.97</td><td>Excluded: turned before zeroing finished</td></tr><tr class=""><td>15</td><td>90</td><td>89.7</td><td>-0.4%</td><td>89.3</td><td>331</td><td>0.64</td><td>Included</td></tr><tr class="excluded"><td>16</td><td>90</td><td>48.7</td><td>-45.9%</td><td>54.3</td><td>304</td><td>7.92</td><td>Excluded: turned before zeroing finished</td></tr><tr class=""><td>17</td><td>90</td><td>86.2</td><td>-4.3%</td><td>84.7</td><td>308</td><td>0.54</td><td>Included</td></tr><tr class=""><td>18</td><td>180</td><td>181.5</td><td>+0.9%</td><td>181.0</td><td>601</td><td>0.71</td><td>Included</td></tr><tr class="excluded"><td>19</td><td>180</td><td>153.3</td><td>-14.8%</td><td>153.3</td><td>548</td><td>47.79</td><td>Excluded: turned before zeroing finished</td></tr><tr class=""><td>20</td><td>180</td><td>181.2</td><td>+0.7%</td><td>181.7</td><td>488</td><td>0.29</td><td>Included</td></tr><tr class=""><td>21</td><td>180</td><td>179.3</td><td>-0.4%</td><td>181.0</td><td>463</td><td>0.45</td><td>Included</td></tr><tr class=""><td>22</td><td>180</td><td>177.7</td><td>-1.3%</td><td>177.1</td><td>477</td><td>0.59</td><td>Included</td></tr><tr class=""><td>23</td><td>180</td><td>177.4</td><td>-1.4%</td><td>177.9</td><td>532</td><td>1.99</td><td>Included</td></tr><tr class=""><td>24</td><td>180</td><td>177.2</td><td>-1.5%</td><td>177.4</td><td>536</td><td>1.70</td><td>Included</td></tr><tr class=""><td>25</td><td>180</td><td>180.2</td><td>+0.1%</td><td>180.4</td><td>547</td><td>1.27</td><td>Included</td></tr><tr class=""><td>26</td><td>180</td><td>177.3</td><td>-1.5%</td><td>178.8</td><td>530</td><td>0.59</td><td>Included</td></tr><tr class=""><td>27</td><td>180</td><td>179.8</td><td>-0.1%</td><td>180.8</td><td>549</td><td>0.17</td><td>Included</td></tr><tr class="excluded"><td>28</td><td>180</td><td>31.9</td><td>-82.3%</td><td>31.9</td><td>468</td><td>33.00</td><td>Excluded: turned before zeroing finished</td></tr><tr class=""><td>29</td><td>180</td><td>178.2</td><td>-1.0%</td><td>177.8</td><td>522</td><td>0.84</td><td>Included</td></tr></tbody></table></div>
+    </details>
+
+    <div class="tests">
+      <div class="test">
+        <h3>Weight</h3>
+        <p>Helmet with the device: 2.10, 2.10 and 2.05 kg on a luggage scale with 0.05 kg steps.</p>
+        <p class="result"><strong>2.08 ± 0.03 kg</strong>the device alone needs a finer scale</p>
+      </div>
+      <div class="test">
+        <h3>Not yet tested</h3>
+        <p>The rotation alert at its real 1000 °/s threshold. Drops never passed 415 °/s, so sharp-turn tests are next.</p>
+      </div>
+    </div>
+
+    <div class="limits">
+      <h3>Limitations</h3>
+      <ul>
+        <li>The sensor measures the helmet shell, which sees sharper peaks than the head. The thresholds come from head measurements, so the device will alert earlier than they suggest.</li>
+        <li>Every drop was onto grass. Hard surfaces will produce shorter, sharper spikes.</li>
+        <li>Rotation accuracy was verified from 192 to 601 °/s, not at 1000 °/s.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</div>
+
+<div class="tab-panel" id="log" hidden>
+<div class="wrap">
+<div class="log-hero tab-hero">
+    <h1>Full design log</h1>
+    <p>Every design choice, problem, fix and test result from June to October 2026, grouped by part of the build. Options I ruled out are included.</p>
+  </div>
+
+  <div class="log-layout">
+    <nav class="toc" aria-label="Log sections">
+      <h2>Sections</h2>
+      <ol>
+        <li><a href="#log-framing">Project framing</a></li>
+        <li><a href="#log-workflow">Tools and workflow</a></li>
+        <li><a href="#log-components">Component selection</a></li>
+        <li><a href="#log-phase1">Phase 1 firmware</a></li>
+        <li><a href="#log-phase2">Phase 2 firmware</a></li>
+        <li><a href="#log-bluetooth">Bluetooth and console</a></li>
+        <li><a href="#log-thresholds">Detection thresholds</a></li>
+        <li><a href="#log-power">Power and charging</a></li>
+        <li><a href="#log-printing">3D printing</a></li>
+        <li><a href="#log-enclosure">Enclosure</a></li>
+        <li><a href="#log-mounting">Helmet mounting</a></li>
+        <li><a href="#log-soldering">Soldering</a></li>
+        <li><a href="#log-assembly">Final assembly issues</a></li>
+        <li><a href="#log-testing">Testing and validation</a></li>
+        <li><a href="#log-next">Open items</a></li>
+      </ol>
+    </nav>
+
+    <article class="log">
+
+<section id="log-framing">
+<h2><span class="num">1</span>Project framing</h2>
+<p class="lead">The device alerts on high-impact hits. It doesn't diagnose concussions, and it's meant to be cheap enough for school teams to use.</p>
+<ul>
+  <li><strong>Alerts, not diagnosis.</strong> It measures linear acceleration and rotational velocity and alerts when either passes a threshold. I'd rather it give a false alarm than miss a hit.</li>
+  <li><strong>Two independent triggers.</strong> Linear and rotational readings can each fire the alert alone, so a hit with big rotation but little linear force still gets flagged. I rejected requiring both.</li>
+  <li><strong>Rotational velocity.</strong> The gyroscope outputs angular velocity directly, and velocity has well-documented injury thresholds. Getting rotational acceleration means differentiating, which amplifies noise. I may add it later, since acceleration is the more direct injury correlate.</li>
+  <li><strong>Why rotation at all.</strong> Shearing from rotation drives most concussive damage, so linear-only sensing wasn't enough. That's why I added a second sensor.</li>
+  <li><strong>Target population.</strong> I started with youth leagues and narrowed it to high school athletes, which raised the linear threshold (section 7).</li>
+  <li><strong>Open source.</strong> The code, materials list, build guide and print files will be public on GitHub, and the print files may also go on Bambu Lab's MakerWorld.</li>
+  <li><strong>Mount location: the nape.</strong> It's the least-hit part of the head, and a hit there usually warrants an evaluation anyway.</li>
+  <li><strong>Known limits.</strong> The sensor sits on the outer shell, which moves relative to the head and typically reads higher than the head itself. So it tends to alert more often.</li>
+</ul>
+</section>
+
+<section id="log-workflow">
+<h2><span class="num">2</span>Tools and workflow</h2>
+<p class="lead">I settled on Arduino IDE for firmware, Git and GitHub for version control, Onshape for CAD and Bambu Studio for slicing.</p>
+<h3>Setup</h3>
+<ul>
+  <li>Set up a new Windows laptop with Git, an SSH key for GitHub, VS Code, Arduino IDE with the ESP32 board package and the CP210x USB driver.</li>
+  <li>Learned the board's COM port only appears while it's plugged in.</li>
+</ul>
+<h3>Version control</h3>
+<ul>
+  <li><strong>Git lost its connection to GitHub</strong> in October. Checking the remote and clearing stale saved credentials fixed it.</li>
+</ul>
+</section>
+
+<section id="log-components">
+<h2><span class="num">3</span>Component selection</h2>
+<p class="lead">The final build uses a HUZZAH32 Feather, an ADXL375 for linear acceleration, an ISM330DHCX for rotation, a 1200 mAh LiPo and resistor-built-in red LEDs.</p>
+<table>
+  <thead><tr><th>Part</th><th>Chosen</th><th>Considered</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Microcontroller</td><td>Adafruit HUZZAH32 (ESP32 Feather)</td><td>Arduino Nano ESP32</td><td>Built-in Bluetooth, battery port and charger on the board; same ecosystem as the sensors. I wanted one board for the whole project, with a pre-soldered copy to prototype and an unsoldered one for the final build.</td></tr>
+    <tr><td>Phase 1 sensor</td><td>MPU-6050, pre-soldered</td><td>None</td><td>Cheap, has an accelerometer and gyroscope. The only pre-soldered source I found was on eBay.</td></tr>
+    <tr><td>High-g accelerometer</td><td>ADXL375, ±200 g</td><td>H3LIS331, ±400 g</td><td>See below.</td></tr>
+    <tr><td>Gyroscope</td><td>ISM330DHCX, ±4000 °/s</td><td>MPU-6050 gyro (±2000 °/s), LSM6DSO32, LSM6DSV80X</td><td>Headroom over the ~1277 °/s average concussive hit. The others lacked range or had no hobbyist board.</td></tr>
+    <tr><td>Battery</td><td>3.7 V 1200 mAh LiPo</td><td>400 mAh, 500 mAh, a ~9 hour option</td><td>The ESP32 draws about 200 mA, so this gives about 5 hours. Practices never run longer, so a bigger battery was just extra size.</td></tr>
+    <tr><td>LEDs</td><td>Resistor-built-in red LEDs, each on its own pin</td><td>Super-bright red (no resistor), mixed-color kit</td><td>No separate resistors means less size and wiring and a closer model of a finished product. Red reads as an alert. Several LEDs leave room for different signals.</td></tr>
+  </tbody>
+</table>
+<p><strong>ADXL375 over H3LIS331.</strong> The 400 g sensor looked safer for its headroom, so I checked whether football hits ever exceed 200 g: big hits run about 50 to 100 g, extreme outliers 150 to 180 g. Running at 400 g spreads the same resolution over twice the range, making readings coarser and filtering harder. The ADXL375 also samples up to 3200 Hz versus 1000 Hz, so I chose it.</p>
+<p><strong>The gyroscope gap.</strong> I noticed only after buying the ADXL375 that it had no gyroscope. So I added the ISM330DHCX as a second sensor on the same data bus.</p>
+<h3>Sourcing lessons</h3>
+<ul>
+  <li>Pre-soldered parts were the hardest to find.</li>
+  <li>The Phase 2 sensors arrived unsoldered, and I didn't know they'd need soldering to prototype (section 5).</li>
+  <li>I bought all three types of jumper wire before I understood breadboards, and wasted some money learning which I needed.</li>
+  <li>I skipped plug-in sensor cables since they only help on a breadboard.</li>
+</ul>
+<p>The full parts and tools list is in the <a href="#guide">Build guide</a>.</p>
+</section>
+
+<section id="log-phase1">
+<h2><span class="num">4</span>Phase 1 firmware (MPU-6050, wired to the laptop)</h2>
+<p class="lead">Phase 1 ended with a calibrated, two-sensor, command-driven program that became the base for every later version.</p>
+<h3>Starting architecture</h3>
+<ul>
+  <li>Direct communication with the MPU-6050, no sensor library, with its hardware noise filter set to about 44 Hz.</li>
+  <li>Typed commands <code>start</code>, <code>stop</code> and <code>clear</code>, cleaned up so case and spaces don't matter.</li>
+  <li>50 ms peak windows: every reading updates a running peak, and only the peak is reported and checked, so a short spike isn't missed between reports.</li>
+  <li>Impact was total acceleration minus 9.8, with a 15 m/s² threshold and an LED on pin 21.</li>
+</ul>
+<h3>Cleanup and fixes</h3>
+<ul>
+  <li><code>clear</code> silently did nothing in some states. It now requires the system to be on and says so otherwise.</li>
+  <li>Added a check that skips any reading where the sensor sent fewer bytes than expected, so a bad read is ignored.</li>
+  <li>Removed a 10-second startup delay.</li>
+</ul>
+<h3>Gravity math</h3>
+<ul>
+  <li>I questioned whether the hardware filter already handled drift. It removes high-frequency noise, but not a constant offset or changes in orientation.</li>
+  <li>The bigger problem was how I split acceleration into X, Y and Z. At a 45° tilt with a 10 m/s² hit on X, my code reported 7.85 on X and a phantom 3.22 on Z.</li>
+  <li>Fix: a rolling estimate of gravity that only updates when nothing is happening, subtracted axis by axis. (This approach later caused its own problem; see section 5.)</li>
+</ul>
+<h3>Range problem</h3>
+<ul>
+  <li>The MPU-6050 starts at ±2 g, so anything stronger clipped. I set it to ±16 g and updated the conversion math.</li>
+  <li>That made readings at rest wander more, since each step is now eight times bigger. A stronger hardware filter would also have smoothed out the impact spikes, so I left it, since the noise was far below the threshold.</li>
+</ul>
+<h3>Adding the gyroscope</h3>
+<ul>
+  <li>The first draft threshold of 300 °/s would trip on normal head movement. I chose 1500 °/s (about 26 rad/s), with either sensor able to alert.</li>
+  <li>Wrote one shared alert function, and made sure a single window raises only one alert.</li>
+  <li>Fixed compile errors, including a repeated variable name in the peak tracking.</li>
+</ul>
+<h3>Drift at rest and calibration</h3>
+<ul>
+  <li>At rest the gyroscope read about −18 °/s and impact acceleration sat near 8.3 m/s² instead of 0.</li>
+  <li>Fix: a 2-second calibration at startup, about 1000 samples, that measures the resting gravity and the gyroscope's offsets and subtracts them from then on.</li>
+  <li>Made calibration its own command that only runs when the system is stopped, and added guards for commands given in the wrong state.</li>
+  <li>Startup messages weren't printing because the board boots before the monitor connects. A 2-second delay fixed it.</li>
+</ul>
+</section>
+
+<section id="log-phase2">
+<h2><span class="num">5</span>Phase 2 firmware (ADXL375 and ISM330DHCX)</h2>
+<p class="lead">The move to the new sensors kept all of Phase 1's logic. Most of the work went into connection faults and two measurement artifacts.</p>
+<h3>Sensor setup</h3>
+<ul>
+  <li>The ADXL375 handles all linear acceleration at 800 Hz. Its ±200 g range is fixed, so there's nothing to configure.</li>
+  <li>The ISM330DHCX handles rotation only, at 833 Hz. The two rates differ because each chip offers its own fixed set.</li>
+  <li>The library caps the gyroscope at ±2000 °/s even though the chip supports 4000. That's still double my threshold, so I left it. A hit beyond 2000 °/s reads as clipped near 2000, which still trips the alert.</li>
+  <li>The ADXL375's fixed ±200 g range puts the 80 g threshold at about 40% of full scale.</li>
+</ul>
+<h3>Problems and fixes</h3>
+<ul>
+  <li><strong>Gyroscope wouldn't start.</strong> It appeared on the data bus but wouldn't initialize, because the wrong class of library code was being used. Switching to the correct ISM330DHCX class fixed it.</li>
+  <li><strong>"ADXL375 not found."</strong> A bus scan found nothing. I ruled out the address, the pins, the voltage, power draw from two sensors and the library. The cause: the unsoldered header pins weren't making contact in the breadboard. I soldered wires straight to the sensor's pads.</li>
+  <li><strong>Recalibrating on <code>clear</code>.</strong> My first version never resumed monitoring and let calibration turn monitoring on even when the system was off. Both are fixed.</li>
+  <li><strong>Rotation stuck at zero.</strong> After a glitch, every axis read 0 until a full power cycle. Checking whether each sensor read actually succeeded, and skipping it if not, fixed it.</li>
+</ul>
+<h3>A head turn read as a hit</h3>
+<ul>
+  <li>Turning the board in the air at 282 °/s, with no impact, produced 124.7 m/s².</li>
+  <li>The slow gravity estimate froze during motion, so as the sensor rotated, gravity swung across the axes and created a fake spike.</li>
+  <li>Fix: compare the total acceleration to 9.81 m/s² instead. Gravity's size doesn't change with orientation, so pure rotation can't move it.</li>
+</ul>
+<h3>Gyroscope spikes on a 2-inch drop</h3>
+<ul>
+  <li>A flat 2-inch drop read over 1500 °/s, about four rotations per second, which a flat landing can't produce.</li>
+  <li>A filter rejecting one-sample spikes didn't help. The cause was the loose board rattling in the breadboard, which is real motion lasting many samples.</li>
+  <li>This was a problem with the breadboard setup, and it's one reason the final enclosure holds everything rigidly.</li>
+</ul>
+<h3>Firmware added for testing (October)</h3>
+<ul>
+  <li>A <code>TEST_MODE</code> switch that drops the thresholds for bench work, with a startup warning while it's on (section 7).</li>
+  <li>The data bus raised from 100 to 400 kHz, taking the loop from 270 to 705 readings per second (section 14).</li>
+  <li>A separate Bluetooth channel for test data, with a larger message size so long captures fit.</li>
+  <li>New commands: <code>gravity</code>, <code>arm</code> and <code>disarm</code> for impact capture, and <code>rotarm</code> and <code>rotstop</code> for the rotation check. They run in the main loop, not inside the Bluetooth stack, which avoids the timing conflict that once dropped a message.</li>
+  <li>Each 50 ms report now includes how many loops ran, so the console can measure sample rate.</li>
+</ul>
+</section>
+
+<section id="log-bluetooth">
+<h2><span class="num">6</span>Bluetooth and the console</h2>
+<p class="lead">The device streams readings and accepts commands over Bluetooth Low Energy, and one web page connects to it from Chrome.</p>
+<h3>Architecture</h3>
+<ul>
+  <li>First tested with the standard Bluetooth library and a phone app, then switched to the lighter NimBLE library.</li>
+  <li>Separate channels for linear acceleration, rotation, alerts, commands and status messages. The alert is sent as soon as it triggers instead of waiting for the next report.</li>
+  <li>I used a web page instead of an app. One file works in Chrome or Edge on a computer and in Chrome on Android. It can't work on iPhone because every iOS browser uses Apple's engine, which doesn't support Web Bluetooth. Web Bluetooth also needs a secure (https) page on a phone, so the console will be hosted on GitHub Pages.</li>
+</ul>
+<h3>Problems and fixes</h3>
+<ul>
+  <li><strong>"No compatible devices found."</strong> Chrome on Windows didn't reliably see the device's name. I switched to finding it by its service ID instead.</li>
+  <li><strong>Event log.</strong> Added a status channel so the page mirrors the device's responses. Only messages answering something the user did are sent, without timestamps or redundant lines.</li>
+  <li><strong>A missing first message.</strong> "Calibrating..." never reached the page, while "Calibration completed" did. The cause was a timing conflict inside the Bluetooth stack. I decided the message wasn't worth a larger rewrite and sent it to the computer only.</li>
+</ul>
+<h3>October changes</h3>
+<ul>
+  <li>Threshold labels on the page were typed in by hand and had drifted from the firmware. They now come from the same constants as a test-mode switch.</li>
+  <li>I tried a brighter sideline-style redesign, decided it looked worse, and kept the original look. Two changes stayed: alerts now stay on screen until cleared, and readings show in g.</li>
+  <li>Added a separate testing tab with five tests, each with its own CSV export (section 14). The test-mode switch must match in the firmware and the page, or the gauges and pass/fail checks disagree with the device.</li>
+</ul>
+</section>
+
+<section id="log-thresholds">
+<h2><span class="num">7</span>Detection thresholds</h2>
+<p class="lead">The final thresholds are 80 g (784.8 m/s²) and 1000 °/s, with a test mode that drops them to 30 m/s² and 500 °/s for bench work.</p>
+<table>
+  <thead><tr><th>When</th><th>Linear</th><th>Rotational</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Oct 2026</td><td>80 g</td><td>1000 °/s</td><td>Target narrowed to high school players</td></tr>
+    <tr><td>Oct 2026</td><td>60 g</td><td>1000 °/s</td><td>Based on youth research, briefly</td></tr>
+    <tr><td>Jun to Oct</td><td>30 m/s²</td><td>1500 °/s</td><td>Bench testing on Phase 2 hardware</td></tr>
+    <tr><td>Jun 2026</td><td>15 m/s²</td><td>1500 °/s</td><td>Phase 1, sized for shaking a breadboard</td></tr>
+  </tbody>
+</table>
+<h3>Research</h3>
+<ul>
+  <li><strong>Rotation</strong> (Rowson 2012, college players): routine hits average 5.5 rad/s (315 °/s), concussive hits 22.3 rad/s (1278 °/s), and 50% concussion risk sits at 28.3 rad/s (1621 °/s). 1500 °/s was too close to the 50% risk level. 1000 °/s is about three times a routine hit.</li>
+  <li><strong>Linear</strong> (Campolettano 2019): concussive hits averaged 62 g in youth players and 102 g in high school and college players. 60 g fits youth players, not high schoolers. 80 g is the most-cited high-magnitude line and below the 102 g average.</li>
+  <li><strong>Why not lower.</strong> High school players take many more hard hits, and an alert that fires every few plays teaches coaches to ignore it.</li>
+</ul>
+<h3>Caveats</h3>
+<ul>
+  <li>Published thresholds come from sensors at the head; mine reads the shell, which reads higher, so it alerts more often.</li>
+  <li>A very short peak can fall between readings and read low. My loop turned out to run at only 270 readings per second; I raised it to 705 and then showed that, on grass, the speed didn't change the peaks (section 14). It will matter on harder surfaces.</li>
+</ul>
+</section>
+
+<section id="log-power">
+<h2><span class="num">8</span>Power and charging</h2>
+<p class="lead">The battery charges through the board's USB port, and power control will be deep sleep rather than a switch.</p>
+<ul>
+  <li><strong>Rechargeable over swappable.</strong></li>
+  <li><strong>Charging.</strong> The board's charger runs independently of the processor, so once deep sleep is added the battery will still charge while the ESP32 sleeps. A full charge takes about 7.5 hours.</li>
+  <li><strong>Switches I ruled out.</strong> A button with a toggle would need code to run, so it could turn the device off but never on. A slide switch would need a custom battery cable. And any switch between battery and board would cut charging, since charging runs through the board.</li>
+  <li><strong>Chosen: deep sleep</strong> (next phase). Plug in USB and the ESP32 sleeps while the battery charges; unplug and it wakes and monitors.</li>
+  <li><strong>Overnight drain.</strong> Until deep sleep is in, the ESP32 keeps running whenever the battery is connected, so it runs flat overnight. This doesn't damage anything. The battery's protection circuit cuts off around 3 V, and the program stays stored. I just keep the device still when plugging it in, since it recalibrates on every start.</li>
+  <li><strong>Stacking.</strong> I put the ESP32 on top of the battery to save space. The battery is bigger than the board, so stacking doesn't make the box any bigger.</li>
+</ul>
+</section>
+
+<section id="log-printing">
+<h2><span class="num">9</span>3D printing</h2>
+<p class="lead">I print on a Bambu Lab P2S with an AMS, prototype in PLA, make functional parts in white PETG, and use the stock 0.4 mm nozzle with extra walls for strength.</p>
+<h3>Printer</h3>
+<ul>
+  <li>Compared Bambu's X1C, P1S and P2S, Prusa's MK4S and CORE One, and Flashforge's Adventurer 5M Pro. I wanted an enclosed printer in a well-supported ecosystem.</li>
+  <li>I chose the P2S with AMS for its enclosure, build volume, failure detection, large community and a discount.</li>
+</ul>
+<h3>Filament</h3>
+<ul>
+  <li>PLA for test fits; PETG for functional parts, balancing strength, cost and ease of printing.</li>
+  <li>ASA kept as an option for heat and UV resistance, but it's harder to print and gives off fumes. TPU kept as an option for an impact bumper.</li>
+  <li>Ruled out carbon-fiber blends (stiffer, but more brittle under impact) and polycarbonate (brittle, impractical without an industrial printer).</li>
+  <li><strong>Heat test.</strong> I worried black would heat the battery in sun, so I tested it. With the air at about 24 °C, after 10 minutes black PETG was about 33 °C above air and white about 9 °C. I chose white.</li>
+</ul>
+<h3>Settings</h3>
+<ul>
+  <li><strong>Nozzle.</strong> A 0.6 mm nozzle adds a little strength but loses detail, and both the enclosure and the base need precise fits. I stayed at 0.4 mm and raised wall loops from 2 to 4 to 6, which makes up the strength.</li>
+  <li><strong>What makes a print strong, in order:</strong> orientation, material, wall count, infill, temperature.</li>
+  <li><strong>Supports fusing to PETG parts.</strong> I printed the support layers that touch the part in PLA instead of PETG, since the two don't bond. Together with a bigger support gap, lower interface density and orienting parts so functional faces need no supports, the supports now come off cleanly.</li>
+  <li><strong>Small screws in PLA.</strong> 0.2 mm layers weren't detailed enough; 0.1 mm worked. The first layer prints larger, so I print screws head-first.</li>
+  <li><strong>Small screws in PETG.</strong> They fell over or the nozzle knocked them loose. What fixed it: a 0.25 mm first layer printed slowly (20 mm/s), slower speeds overall, outer-to-inner walls, the Arachne wall generator, a brim and slower cooling. Larger Z hop, flow changes and pressure advance made no difference.</li>
+  <li><strong>Layer-height limits affected the designs.</strong> That thicker first layer distorts small, precise features, which is why I dropped the L-shaped pin and L-shaped hex key.</li>
+</ul>
+</section>
+
+<section id="log-enclosure">
+<h2><span class="num">10</span>Enclosure</h2>
+<p class="lead">The enclosure is a two-part white PETG box I designed in Onshape: a bottom with battery guardrails and sensor pads, a top that slots on with grooves, and printed screws in all four corners.</p>
+<h3>Requirements I set</h3>
+<ul>
+  <li>Real part dimensions, every device grounded, LEDs on the sides facing along the helmet, a smooth USB connection, vents only if needed, the battery under the ESP32, and the smallest box possible.</li>
+  <li>Vents turned out unnecessary for the low heat.</li>
+</ul>
+<h3>How the bottom evolved</h3>
+<ol>
+  <li>A blocky first version: screw holes in all four corners (unchanged since), a tall wall between the battery and sensor sides with a wiring gap, plain sensor pads, LED and USB holes, and too much height.</li>
+  <li>Guardrails on every side of the battery so it fits snugly; the dividing wall became one of them.</li>
+  <li>Lowered the wall to the height of the guardrails, since all the wiring couldn't pass through one gap.</li>
+  <li>Shrank everything as far as possible while still leaving room to wire it, including the height.</li>
+  <li>Added an indent matching the USB cable's shape, because a plain hole didn't let the plug sit flush against the board.</li>
+  <li>Added the dovetail and pin hole for mounting (section 11).</li>
+  <li>Cut relief into the sensor pads, since the soldered pins on the boards' undersides stopped them sitting flat.</li>
+  <li>Added alignment pins through the sensors' mounting holes. I prototyped the pads as separate prints first.</li>
+  <li>Raised the height a couple of millimeters for assembly and wiring.</li>
+</ol>
+<p>The top and bottom now meet at the outer walls, and most middle walls are gone except those holding the battery.</p>
+<h3>Top</h3>
+<ul>
+  <li>Thinner corners give the screws a smaller profile.</li>
+  <li>Two grooves, with matching features on the bottom, set the top in one position before screwing.</li>
+</ul>
+<h3>Printed screws</h3>
+<ul>
+  <li>Onshape's thread tool only makes standard threads, and I needed a custom screw and hole. I learned to build threads with a helix and sweep from tutorials.</li>
+  <li>The screw needed a chamfered tip to start in the hole, which meant chamfering the hole too. That took a lot of steps in a specific order.</li>
+  <li>The thread spacing has to divide evenly into the screw's length. I widened it from 1 to 1.5 mm when finer threads bent, which made the holes 21 mm deep. I enlarged holes for clearance, since the printer isn't perfectly accurate.</li>
+  <li>A hexagonal socket balanced what the printer can form with enough grip to turn. I'll likely remove it, since I finish the screws with pliers anyway.</li>
+</ul>
+<h3>Printed hex key</h3>
+<ul>
+  <li>An L-shaped key had the same layer-height problem as the pin and bent easily.</li>
+  <li>I redesigned it as a short shaft with a handle: the handle absorbs the uneven first layer, and the shorter shape takes more torque.</li>
+  <li>It still couldn't handle enough torque, so I switched to pliers.</li>
+</ul>
+<h3>Stack shield</h3>
+<ul>
+  <li>I didn't want the board taped straight onto the battery, since its soldered pins could tear the battery's foil. So I printed a very thin plastic shield between them.</li>
+  <li>It grew from the board's outline to rest on the battery guardrails.</li>
+  <li>The board's pins kept its flat underside off the shield, so the tape couldn't grip. A raised section fixed that and also lines the board up with the USB hole.</li>
+</ul>
+<h3>Mounting the parts</h3>
+<ul>
+  <li>Small printed screws for the sensors were finer than the nozzle can form. I planned to use epoxy, then chose <strong>VHB tape for everything</strong>: the alignment pins already stop the sensors moving, and tape keeps assembly simple.</li>
+  <li>Ruled out foam tape (compresses), super glue (brittle under shock) and masking tape (creeps).</li>
+  <li>I dropped foam because I was worried about static and heat building up inside the box.</li>
+  <li>A shelf under the board would have made the battery hard to insert, so the shield took its place.</li>
+  <li><strong>Final stack, bottom to top:</strong> tape, battery, tape, shield, tape, ESP32. I dropped a planned insulating layer as redundant once the shield existed. The tape raised the board, so I moved the USB hole.</li>
+</ul>
+<h3>Assembly</h3>
+<ul>
+  <li>I soldered everything into one harness, then placed it in the enclosure, LEDs first since their wires bend most easily.</li>
+  <li>The LEDs aren't glued. The holes hold them, glue would have made assembly harder, and in a ground hit the enclosure's corner and the helmet take the contact.</li>
+</ul>
+<h3>Sensor position</h3>
+<ul>
+  <li>Sensors toward the top of the nape, battery lower, so the heavy part sits near the mount. Rotational velocity is the same anywhere on the helmet, so the signal barely changes.</li>
+</ul>
+</section>
+
+<section id="log-mounting">
+<h2><span class="num">11</span>Helmet mounting</h2>
+<p class="lead">A curved base is bonded to the helmet (a Schutt F7) with VHB tape, and the enclosure slides onto its dovetail and locks with a straight friction pin.</p>
+<h3>Base attachment</h3>
+<ul>
+  <li><strong>No straps.</strong> Straps through the helmet's holes would block ventilation and the ear openings. Adhesive is harder to adjust, but the base shouldn't need to change, and isopropyl alcohol removes it.</li>
+  <li><strong>No drilling,</strong> which would compromise the helmet's protection and certification.</li>
+</ul>
+<h3>Attaching the device to the base</h3>
+<ol>
+  <li><strong>Magnets:</strong> ruled out. Strong enough to hold could interfere with the electronics.</li>
+  <li><strong>Velcro:</strong> my early favorite, ruled out as too springy. It blurs the impact signal.</li>
+  <li><strong>Dovetail:</strong> chosen. The angled walls trap the foot so it can only slide one way.</li>
+  <li><strong>Locking that last direction:</strong> a screw was too slow to remove, and a snap clip would wear out. I designed an L-shaped pin that twists to lock, with a hidden tail in a keyed slot, but it couldn't print accurately in either orientation. The final pin is straight, with no turning, held by friction in a square-plus-semicircle hole. It has held well so far.</li>
+  <li><strong>One pin, not two:</strong> the dovetail already locks the other five directions.</li>
+</ol>
+<h3>Fitting the curve</h3>
+<ol>
+  <li>On the helmet, I measured how far the shell curved away from a straight edge (the sagitta) and the edge's length (the chord) in two directions.</li>
+  <li>I calculated each radius with the sagitta formula.</li>
+  <li>I printed flat tracers of both curves and ran them along the helmet to check they sat flush.</li>
+  <li>My first base used a straight cut for each curve, which left a flat middle that didn't sit flush.</li>
+  <li>Sweeping one curve along the other made a saddle surface that sat flush on the first try.</li>
+</ol>
+<p class="formula">radius = chord² ÷ (8 × sagitta) + sagitta ÷ 2</p>
+</section>
+
+<section id="log-soldering">
+<h2><span class="num">12</span>Soldering</h2>
+<p class="lead">This was my first time soldering. The final wiring uses two-wire splices on a stripped wire middle, which keeps every joint short and slim enough to fit.</p>
+<h3>Learning</h3>
+<ul>
+  <li>Practiced on a kit with leaded solder, with the iron at 325 °C. Through-hole joints came quickly. Lead-free felt about the same.</li>
+  <li>When the Phase 2 sensors' loose header pins failed, I soldered wires straight to their pads.</li>
+</ul>
+<h3>Shared wires</h3>
+<ul>
+  <li>Both sensors share their data, clock and power wires, so each needs a three-way joint that's short enough to bend where it needs to go.</li>
+  <li>Twisting three ends together made a bulky joint that didn't fit any heat-shrink size well.</li>
+  <li>Final method: strip the middle of one wire with a craft knife and solder the second wire's end onto it. With practice I got these consistently small.</li>
+</ul>
+<h3>Ground</h3>
+<ul>
+  <li>Four wires had to reach one ground pin. Five ends soldered together was too big and didn't connect well.</li>
+  <li>Final: one splice as above, plus a joint between the stripped middles of two wires, giving four ends into one pin.</li>
+</ul>
+<h3>LEDs</h3>
+<ul>
+  <li>Each leg was laid parallel to its wire and soldered, with heat shrink on one leg so the legs can't short if they touch.</li>
+</ul>
+<p>Every joint has heat shrink.</p>
+</section>
+
+<section id="log-assembly">
+<h2><span class="num">13</span>Final assembly issues</h2>
+<p class="lead">One problem surfaced once everything was soldered and enclosed: one LED was the wrong type.</p>
+<h3>Mixed LEDs</h3>
+<ul>
+  <li>I soldered one super-bright LED by mistake beside a resistor-built-in LED. The super-bright one draws too much current straight from the pin.</li>
+  <li>The fix is a 100 Ω resistor spliced into its lead, which keeps the brightness. Since brightness won't match, each LED can use a different blink pattern.</li>
+</ul>
+</section>
+
+<section id="log-testing">
+<h2><span class="num">14</span>Testing and validation</h2>
+<p class="lead">From October 19 to 29 the sensors passed every accuracy check: 19 drops confirmed the accelerometer's calibration, the alert was right on all 25 alert drops, and the gyroscope measured turns at a scale factor of 0.989.</p>
+<p>Every individual drop and turn, with graphs, is on the <a href="#testing">Testing</a> page.</p>
+<h3>Two separate questions</h3>
+<ul>
+  <li><strong>Are the readings accurate?</strong> Gravity check, sample rate, impulse check, rotation check. Each compares the sensor to something independent: gravity, a clock, a drop height, a marked angle.</li>
+  <li><strong>Does the code act on it correctly?</strong> Alert drops. These trust the sensor and check only the alert decision.</li>
+</ul>
+<p>Helmet with the device: 2.10, 2.10 and 2.05 kg on a luggage scale with 0.05 kg steps, so 2.08 ± 0.03 kg. The device alone needs a finer scale.</p>
+
+<h3>Test 1: Gravity check (passed)</h3>
+<p>With the device still, the raw total on each of the 6 faces should be about 9.81 m/s². That checks the scale and all three axes in both directions.</p>
+
+<h3>Test 2: Sample rate, and a fix</h3>
+<ul>
+  <li>A hard impact can rise and fall within milliseconds, so sampling too slowly lets the true peak fall between readings.</li>
+  <li><strong>Problem:</strong> the loop ran at only 270 readings per second, below the accelerometer's 800, because the data bus ran at the ESP32's default 100 kHz.</li>
+  <li><strong>Fix:</strong> one line, <code>Wire.setClock(400000)</code>. Both sensors support 400 kHz. 270 → 705 readings per second; about 1 in 8 sensor updates is still skipped.</li>
+</ul>
+
+<h3>Test 3: Accuracy drops (the impulse check)</h3>
+<ol>
+  <li>A dropped helmet's impact speed depends only on height, which I measure with a tape measure.</li>
+  <li>To stop the helmet, the ground must deliver a fixed total push whatever the surface. Soft ground spreads it out and hard ground concentrates it, but the total is the same.</li>
+  <li>The accelerometer records that push moment by moment, so the area under the impact spike equals the change in speed.</li>
+  <li>No bounce gives a ratio of 1×, a perfect bounce 2×. If the sensor read 30% low, the ratio would fall below 1, which can't happen physically. Gravity keeps pulling during contact, adding about 0.08 m/s over 8 ms, so the pass band runs slightly past 2×.</li>
+</ol>
+<p class="formula">impact speed = √(2 × g × height)</p>
+<p>With the system stopped, the device reads as fast as it can, keeps the last 64 readings, triggers at about 5 g and records 192 more with microsecond timestamps. The console finds the contact window (above 2 g; free fall reads 0 g and rest 1 g), adds up the area on each axis and compares it to the impact speed. Below 0.85× reads low, 0.85 to 2.15× matches the physics, above 2.15× reads high.</p>
+<table>
+  <thead><tr><th>Height</th><th>Drops</th><th>Peak g, mean ± SD</th><th>Ratio</th></tr></thead>
+  <tbody>
+    <tr><td>61 cm</td><td>4</td><td>75.6 ± 3.2</td><td>1.19–1.27</td></tr>
+    <tr><td>91 cm</td><td>5</td><td>93.2 ± 5.9</td><td>1.11–1.28</td></tr>
+    <tr><td>122 cm</td><td>5</td><td>123.0 ± 13.8</td><td>1.12–1.44</td></tr>
+    <tr><td>152 cm</td><td>5</td><td>132.4 ± 20.9</td><td>0.95–1.39</td></tr>
+  </tbody>
+</table>
+<ul>
+  <li><strong>All 19 drops passed.</strong> Ratios averaged 1.23 ± 0.11, confirming the accelerometer's calibration, with 23 to 41 readings inside each impact.</li>
+  <li>Grass absorbed most of the bounce.</li>
+  <li>Repeatability worsened with height, from ±4% at 61 cm to ±16% at 152 cm. The low outlier, drop 18 (ratio 0.95, 103 g), was probably an off-angle landing and still passed.</li>
+  <li>Each peak was about 10× its average acceleration: a soft push of about 10 g from the grass with a brief sharp spike on top. Each waveform showed one main spike with no back-and-forth oscillation, so the spike isn't the shell ringing. A small bump about 250 ms later was the helmet landing again, correctly left out.</li>
+  <li><strong>Peak vs height:</strong> peak g rises with height to the power 0.64 ± 0.08, between a springy surface (0.5) and a crushing one (1.0), which fits grass over soil. That puts 80 g at about 68 cm for this session. My first fit, a straight line through zero, assumed peak doubles with height, which only holds for crushing surfaces, and gave 84 cm.</li>
+</ul>
+
+<h3>Test 4: Alert drops (logic check)</h3>
+<ul>
+  <li>With the system running, the console holds each drop's biggest hit, decides whether it should alert, and checks whether the device did.</li>
+  <li><strong>25 drops at 30, 61 and 91 cm: 12 of 12 above 80 g alerted, and 0 of 13 below.</strong> Near the line, 82.7 g and 84.0 g alerted and 74.8 g stayed quiet.</li>
+  <li>Rotation never passed 415 °/s in these drops, so they tested only the linear alert.</li>
+</ul>
+
+<h3>Testing a hypothesis</h3>
+<ul>
+  <li>Alert drops read higher than impulse drops at the same heights: 12% higher at 61 cm (84.4 vs 75.6 g) and 26% at 91 cm (117.6 vs 93.2 g).</li>
+  <li><strong>Hypothesis:</strong> the impulse drops ran before the loop-speed fix, so slow sampling missed the tops of the spikes. The impulse ratio wouldn't catch that, since the area would still come out right.</li>
+  <li>The existing data couldn't settle it, because the ground, my release technique and the capture mode had also changed between sessions.</li>
+  <li><strong>Controlled test:</strong> same spot, 91 cm, same session, switching only the bus speed.</li>
+</ul>
+<table>
+  <thead><tr><th></th><th>Slow loop, 270/s</th><th>Fast loop, 705/s</th></tr></thead>
+  <tbody>
+    <tr><td>Peaks (g)</td><td>126.4, 107.3, 126.2, 140.1, 100.2</td><td>119.1, 143.9, 140.5, 116.7, 113.9</td></tr>
+    <tr><td>Mean ± SD</td><td>120.0 ± 16.1</td><td>126.8 ± 14.2</td></tr>
+    <tr><td>Readings in contact</td><td>≈30</td><td>45–61</td></tr>
+  </tbody>
+</table>
+<ul>
+  <li>I excluded one slow drop (9.0 g, 186 ms of contact) as a cushioned landing, probably on the facemask. Its ratio was still 1.05, so the sensor measured a gentle stop correctly.</li>
+  <li><strong>Result: loop speed wasn't the cause.</strong> The 6% difference is inside the drop-to-drop scatter, and both sets matched the alert drops. The earlier gap came from session conditions, most likely the ground. Grass impact spikes last 8 to 10 ms, wide enough for even the slow loop; on hard surfaces, where spikes last 1 to 3 ms, faster sampling will matter.</li>
+  <li>Peak g on grass varies about 30% between sessions, the biggest uncertainty in my linear data. So the height that reaches 80 g on grass is roughly 50 to 70 cm, reported as a range.</li>
+  <li>Still to do: a second slow set at the end of a session, to rule out the grass packing down. Unexplained: the fast set counted about 1300 readings per second inside the impact, faster than the accelerometer's 800 setting.</li>
+</ul>
+
+<h3>Test 5: Rotation check</h3>
+<ul>
+  <li><strong>Why not a pendulum:</strong> a swinging helmet's peak speed can be predicted from its swing time alone, but a hanging helmet only reaches 700 to 900 °/s and can't test the 1000 °/s threshold, so I didn't run it. I also weighed a phone's gyroscope, a record player at exactly 200 °/s and a zero check.</li>
+  <li><strong>The idea:</strong> the gyroscope measures turning speed, so adding up speed × time over a turn should equal the angle turned. Turning the helmet between tape marks gives a known angle.</li>
+  <li><strong>Setup:</strong> the helmet sits upright on its rim and turns about a vertical axis between tape marks at 90° and 180°. Larger turns couldn't be done fast without the helmet shifting off its axis.</li>
+</ul>
+<p>How the device measures a turn:</p>
+<ol>
+  <li>It averages the gyroscope for 0.5 s at rest as a fresh zero.</li>
+  <li>While waiting, readings are saved but not added, so waiting adds no drift.</li>
+  <li>When the speed passes 10 °/s, the last 0.3 s of saved readings is added so the speed-up from rest counts.</li>
+  <li>Each axis is summed separately with its sign, so noise and small wobbles cancel. The total angle combines the three.</li>
+  <li>It stops once the speed stays under 10 °/s for 0.5 s, which catches the slowdown onto the mark.</li>
+  <li>Limits: 20 s maximum, a "no turn detected" message, and a manual stop that also runs a still test for drift.</li>
+</ol>
+<p>The 10 °/s line sits well above the roughly 1.5 °/s the display shows at rest, which is the largest of about 35 readings per window rather than a constant offset.</p>
+<p><strong>My simpler method, run alongside:</strong> count only readings above 10 °/s, turn that count into a turning time, and compare the true average speed to the gyroscope's average over the same time. The turning time cancels out, so the only error is how much of the turn happened below 10 °/s.</p>
+<table>
+  <thead><tr><th></th><th>90° (10 turns)</th><th>180° (10 turns)</th></tr></thead>
+  <tbody>
+    <tr><td>Full integration</td><td>86.9 ± 4.2° (−3.5%)</td><td>179.0 ± 1.6° (−0.6%)</td></tr>
+    <tr><td>My threshold method</td><td>87.2°</td><td>179.4°</td></tr>
+    <tr><td>Speeds tested</td><td>192–345 °/s</td><td>463–601 °/s</td></tr>
+  </tbody>
+</table>
+<ul>
+  <li><strong>29 trials; 9 excluded</strong> because I turned before zeroing finished.</li>
+  <li><strong>Overall scale factor 0.989</strong> (1.000 is perfect); average error −2.0 ± 3.6% per turn. My threshold method gave 0.991.</li>
+  <li>Accuracy didn't change with speed between 192 and 601 °/s. The gyroscope's scale is a single fixed factor, so it should hold at 1000 °/s; the only problem at high speed would be clipping at 2000 °/s.</li>
+  <li>The wider 90° spread came from three turns with higher zero drift (4 to 6 °/s instead of 0.2 to 2.0). Moving during zeroing gets counted as part of the zero, giving an error of about drift × run time, which matched those turns' errors (−9.5°, −10.7°, −4.5°). I kept them in; without them, 90° turns averaged 89.0 ± 2.1°.</li>
+  <li>My threshold method matched full integration because the turns were fast. It read slightly higher when I eased the helmet back onto the mark, since integration subtracts that backward nudge and the threshold method never sees it. For quick turns, the simple method works about as well.</li>
+</ul>
+
+<h3>Limitations</h3>
+<ul>
+  <li>The sensor reads the shell, which sees sharper, higher peaks than the head, so the device will alert earlier than the research thresholds suggest.</li>
+  <li>Every drop was onto grass, which varies about 30% between sessions; within a session, peaks repeat within about ±15%.</li>
+  <li>Gyroscope accuracy was verified from 192 to 601 °/s on 90° and 180° turns, not at 1000 °/s, and the rotation alert hasn't been tested at its real threshold yet.</li>
+</ul>
+</section>
+
+<section id="log-next">
+<h2><span class="num">15</span>Open items</h2>
+<ul>
+  <li>A sharp-twist test of the rotation alert at its real 1000 °/s threshold</li>
+  <li>Weigh the device on a finer scale</li>
+  <li>Reprint the enclosure in a better orientation to make it stronger</li>
+  <li>Remove the hex socket from the screws</li>
+  <li>Deep sleep mode</li>
+</ul>
+</section>
+
+    </article>
+  </div>
+</div>
+</div>
+
+<div class="tab-panel" id="console" hidden>
+<section class="section first">
+  <div class="wrap console-block">
+    <div>
+      <div class="section-head" style="margin-bottom:20px">
+        <h2>The console</h2>
+        <p>A web page that connects to the device over Bluetooth, shows both readings live, and shows an alert until someone clears it.</p>
+      </div>
+      <p class="prose">It also has a testing tab that runs the checks from the Testing page and exports the results as CSV. It runs in Chrome or Edge on a computer, or Chrome on an Android phone.</p>
+      <div class="actions"><a class="btn" href="console.html" target="_blank" rel="noopener" data-console>Open the console</a></div>
+    </div>
+    <div class="panel">
+      <h3>You'll need</h3>
+      <ul>
+        <li>Chrome or Edge on a computer, or Chrome on an Android phone. iPhone browsers don't support Web Bluetooth.</li>
+        <li>A powered Helmet Impact Monitor within range.</li>
+      </ul>
+      <h3>Without a device</h3>
+      <ul><li>The page opens so you can see the layout, but it won't show readings.</li></ul>
+    </div>
+  </div>
+</section>
+</div>
+
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <span>Helmet Impact Monitor, by Oliver Comfort</span>
+    <span><a href="#log">Design log</a><a href="https://github.com/oolavuar1">GitHub</a></span>
+  </div>
+</footer>
+<script src="site.js"></script>
+</body>
+</html>
