@@ -29,7 +29,7 @@
   <div class="wrap hero-grid">
     <div>
       <h1>Helmet Impact<br>Monitor</h1>
-      <p class="lede">A sensor I designed and built that mounts on the back of a football helmet. It measures the linear acceleration and rotation of every hit, and sends an alert over Bluetooth when either one passes a threshold from concussion research.</p>
+      <p class="lede">A sensor I designed and built that mounts on the back of a football helmet. It measures the linear acceleration and rotation of every hit, and sends an alert over Bluetooth when either one passes a threshold based on concussion research.</p>
       <div class="actions">
         <a class="btn" href="#build">How I built it</a>
         <a class="btn ghost" href="#testing">Test results</a>
@@ -292,7 +292,7 @@
 <div class="wrap">
   <div class="tab-hero">
     <h1>Build guide</h1>
-    <p>How to make one. The code and print files will be on GitHub.</p>
+    <p>How to make one. The code and print files are on GitHub.</p>
     <div class="cad-link"><a class="btn ghost" href="https://cad.onshape.com/documents/ed99d0b06df9e477665971e0/w/3d3a22881dab07a6218cb837/e/45c9494ef317be60c1e28623" target="_blank" rel="noopener">View the CAD in Onshape</a></div>
   </div>
 
@@ -960,7 +960,7 @@
   <li><strong>Rotational velocity.</strong> The gyroscope outputs angular velocity directly, and velocity has well-documented injury thresholds. Getting rotational acceleration means differentiating, which amplifies noise. I may add it later, since acceleration is the more direct injury correlate.</li>
   <li><strong>Why rotation at all.</strong> Shearing from rotation drives most concussive damage, so linear-only sensing wasn't enough. That's why I added a second sensor.</li>
   <li><strong>Target population.</strong> I started with youth leagues and narrowed it to high school athletes, which raised the linear threshold (section 7).</li>
-  <li><strong>Open source.</strong> The code, materials list, build guide and print files will be public on GitHub, and the print files may also go on Bambu Lab's MakerWorld.</li>
+  <li><strong>Open source.</strong> The code, materials list, build guide and print files are public on GitHub, and the print files may also go on Bambu Lab's MakerWorld.</li>
   <li><strong>Mount location: the nape.</strong> It's the least-hit part of the head, and a hit there usually warrants an evaluation anyway.</li>
   <li><strong>Known limits.</strong> The sensor sits on the outer shell, which moves relative to the head and typically reads higher than the head itself. So it tends to alert more often.</li>
 </ul>
@@ -1297,7 +1297,7 @@
 <h3>Mixed LEDs</h3>
 <ul>
   <li>I soldered one super-bright LED by mistake beside a resistor-built-in LED. The super-bright one draws too much current straight from the pin.</li>
-  <li>The fix is a 100 Ω resistor spliced into its lead, which keeps the brightness.</li>
+  <li>So, I desoldered the super-bright LED and replaced it with another resistor-built-in LED.</li>
 </ul>
 </section>
 
